@@ -20,7 +20,8 @@ default_start_date = '2000-01-01T00:00:00Z'
 session = requests.Session()
 
 state = {
-    'leads': default_start_date
+    'leads': default_start_date,
+    'activities': default_start_date
 }
 
 class StitchException(Exception):
@@ -52,28 +53,61 @@ def request(**kwargs):
     response.raise_for_status()
     return response
 
-def get_leads(auth, query_date, offset=0):
+def get_leads_custom_fields(auth):
+    params = {
+        '_limit': return_limit,
+        '_skip': 0
+    }
+
+    logger.info('Fetching leads custom fields meta data')
+
+    fields = []
+    
+    has_more = True
+    while has_more:
+        logger.info('Fetching leads custom fields with offset ' + str(params['_skip'])
+                    ' and limit ' + str(params['_limit']))
+        response = request(url=base_url + '/custom_fields/lead/', params=params, auth=auth)
+        body = response.json()
+        fields += body['data']
+        if len(body['data']) == 0:
+            return fields
+
+        has_more = 'has_more' in body and body['has_more']
+        params['_skip'] += return_limit
+
+    return fields
+
+def get_leads_schema(auth):
+    custom_fields = get_leads_custom_fields(auth)
+
+def get_leads(auth):
     global state
 
     params = {
         '_limit': return_limit,
-        '_skip': offset,
-        'query': 'date_updated >= ' + query_date + ' sort:date_updated'
+        '_skip': 0,
+        'query': 'date_updated >= ' + state['leads'] + ' sort:date_updated'
     }
-    logger.info("Fetching leads starting at " + query_date + "; offset " + str(offset) + "; limit " + str(return_limit));
-    response = request(url=base_url + '/lead/', params=params, auth=auth)
 
-    body = response.json()
-    data = body['data']
-    if len(data) == 0:
-        return
+    logger.info("Fetching leads starting at " + state['leads'])
     
-    ss.write_records('leads', data)
-    state['leads'] = data[-1]['date_updated']
-    ss.write_bookmark(state)
-    
-    if 'has_more' in body and body['has_more']:
-        get_leads(auth, query_date, offset = offset + return_limit)
+    has_more = True
+    while has_more:
+        logger.info("Fetching leads with offset " + str(params['_skip']) +
+                    " and limit " + str(params['_limit']))
+        response = request(url=base_url + '/lead/', params=params, auth=auth)
+        body = response.json()
+        data = body['data']
+        if len(data) == 0:
+            return
+        ss.write_records('leads', data)
+        state['leads'] = data[-1]['date_updated']
+        ss.write_bookmark(state)
+
+        has_more = 'has_more' in body and body['has_more']
+        params['_skip'] += return_limit
+
 
 def do_check(args):
     with open(args.config) as file:
@@ -101,6 +135,9 @@ def do_sync(args):
     if args.state != None:
         with open(args.state) as file:
             state = json.load(file)
+        if 'leads' not in state or 'activities' not in state:
+            logger.fatal('Invalid state, leads and activities required')
+            sys.exit(-1)
 
     logger.info('Replicating all Close.io data')
 
@@ -109,7 +146,7 @@ def do_sync(args):
     auth = (config['api_key'],'')
     
     try:
-        get_leads(auth, state['leads'])
+        get_leads(auth)
     except requests.exceptions.RequestException as e:
         logger.fatal("Error on " + e.request.url +
                      "; received status " + str(e.response.status_code) +
