@@ -65,7 +65,7 @@ def get_leads_custom_fields(auth):
     
     has_more = True
     while has_more:
-        logger.info('Fetching leads custom fields with offset ' + str(params['_skip'])
+        logger.info('Fetching leads custom fields with offset ' + str(params['_skip']) +
                     ' and limit ' + str(params['_limit']))
         response = request(url=base_url + '/custom_fields/lead/', params=params, auth=auth)
         body = response.json()
