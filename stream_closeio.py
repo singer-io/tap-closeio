@@ -133,13 +133,14 @@ def do_sync(args):
         config = json.load(file)
 
     if args.state != None:
+        logger.info("Loading state from " + args.state)
         with open(args.state) as file:
-            state = json.load(file)
-        if 'leads' not in state or 'activities' not in state:
-            logger.fatal('Invalid state, leads and activities required')
-            sys.exit(-1)
+            state_arg = json.load(file)
+        for key in ['leads', 'activities']:
+            if key in state_arg:
+                state[key] = state_arg[key]
 
-    logger.info('Replicating all Close.io data')
+    logger.info('Replicating all Close.io data, with starting state ' + repr(state))
 
     ## TODO: write schemas to stream
 
@@ -165,7 +166,7 @@ def main():
     parser_sync.set_defaults(func=do_sync)
 
     for subparser in [parser_check, parser_sync]:
-        subparser.add_argument('-c', '--config', help='Config file', required=True)    
+        subparser.add_argument('-c', '--config', help='Config file', required=True)
         subparser.add_argument('-s', '--state', help='State file')
     
     args = parser.parse_args()
