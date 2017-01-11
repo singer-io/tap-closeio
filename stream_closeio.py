@@ -81,9 +81,13 @@ def get_leads_custom_fields(auth):
 def get_leads_schema(auth):
     custom_fields = get_leads_custom_fields(auth)
 
+    print(custom_fields)
+    
 def get_leads(auth):
     global state
 
+    lead_schema = get_leads_schema(auth)
+    
     params = {
         '_limit': return_limit,
         '_skip': 0,
