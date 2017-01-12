@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import argparse
+import re
 
 import requests
 import stitchstream as ss
@@ -78,15 +79,38 @@ def get_leads_custom_fields(auth):
 
     return fields
 
-def get_leads_schema(auth):
+def get_type(closeio_type):
+    if closeio_type == 'datetime' or closeio_type == 'date':
+        return {
+            'type': ['null', 'string'],
+            'format': 'date-time'
+        }
+
+    if closeio_type == 'number':
+        return {'type': ['null', 'number']}
+
+    return {'type': ['null', 'string']}
+
+def get_leads_schema(auth, lead_schema):
     custom_fields = get_leads_custom_fields(auth)
 
-    print(custom_fields)
-    
-def get_leads(auth):
-    global state
+    properties = {}
+    for field in custom_fields:
+        properties[field['name']] = get_type(field['type'])
 
-    lead_schema = get_leads_schema(auth)
+    lead_schema['properties']['custom'] = {
+        'type': 'object',
+        'properties': properties
+    }
+
+def date_to_datetime(d):
+    if isinstance(d, str) and re.match(r'\d\d\d\d-\d\d-\d\d', d):
+        return d + 'T00:00:00.00.000000+00:00'
+    else:
+        return d
+        
+def get_leads(auth, lead_schema):
+    global state
     
     params = {
         '_limit': return_limit,
@@ -103,8 +127,27 @@ def get_leads(auth):
         response = request(url=base_url + '/lead/', params=params, auth=auth)
         body = response.json()
         data = body['data']
+
+        custom_field_schema = lead_schema['properties']['custom']
+        
+        for lead in data:
+            if 'tasks' in lead:
+                for task in lead['tasks']:
+                    for k in ['date', 'due_date']:
+                        if k in task:
+                            task[k] = date_to_datetime(task[k])
+
+            if 'custom' in lead:
+                custom = lead['custom']
+                for prop in custom_field_schema['properties']:
+                    if prop in custom:
+                        field = custom_field_schema['properties'][prop]
+                        if 'format' in field and field['format'] == 'date-time':
+                            lead['custom'][prop] = date_to_datetime(custom[prop])
+                            
         if len(data) == 0:
             return
+
         ss.write_records('leads', data)
         state['leads'] = data[-1]['date_updated']
         ss.write_bookmark(state)
@@ -131,6 +174,19 @@ def do_check(args):
                      ": " + e.response.text)
         sys.exit(-1)
 
+def get_abs_path(path):
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
+def load_schemas(auth):
+    schemas = {}
+
+    with open(get_abs_path('schemas/leads.json')) as file:
+        schemas['leads'] = json.load(file)
+
+    get_leads_schema(auth, schemas['leads'])
+        
+    return schemas
+        
 def do_sync(args):
     global state
     with open(args.config) as file:
@@ -146,18 +202,20 @@ def do_sync(args):
 
     logger.info('Replicating all Close.io data, with starting state ' + repr(state))
 
-    ## TODO: write schemas to stream
-
     auth = (config['api_key'],'')
+
+    schemas = load_schemas(auth)
+    for k in schemas:
+        ss.write_schema(k, schemas[k])
     
     try:
-        get_leads(auth)
+        get_leads(auth, schemas['leads'])
     except requests.exceptions.RequestException as e:
         logger.fatal("Error on " + e.request.url +
                      "; received status " + str(e.response.status_code) +
                      ": " + e.response.text)
         sys.exit(-1)
-    
+        
 def main():
     parser = argparse.ArgumentParser()
 
