@@ -117,8 +117,8 @@ def get_contacts(auth, partial_contacts):
     return contacts
     
 def get_leads(auth, lead_schema):
-    global state
-    
+    global state 
+
     params = {
         '_limit': return_limit,
         '_skip': 0,
@@ -133,6 +133,7 @@ def get_leads(auth, lead_schema):
                     " and limit " + str(params['_limit']))
         response = request(url=base_url + '/lead/', params=params, auth=auth)
         body = response.json()
+   
         data = body['data']
 
         custom_field_schema = lead_schema['properties']['custom']
@@ -144,6 +145,9 @@ def get_leads(auth, lead_schema):
                         if k in task:
                             task[k] = date_to_datetime(task[k])
 
+            if 'date_won' in lead:
+                lead['date_won'] = date_to_datetime(lead['date_won'])
+                            
             if 'custom' in lead:
                 custom = lead['custom']
                 for prop in custom_field_schema['properties']:
@@ -164,6 +168,43 @@ def get_leads(auth, lead_schema):
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
 
+def get_activities(auth):
+    global state
+
+    ## TODO: envelope.date "date": "Fri, 13 Jan 2017 15:47:13 +0000",
+    ## TODO: date_scheduled ?
+    
+    params = {
+        '_limit': return_limit,
+        '_skip': 0,
+        'date_created__gt': state['activities']
+    }
+
+    logger.info("Fetching activities starting at " + state['activities'])
+
+    count = 0
+    
+    has_more = True
+    while has_more:
+        logger.info("Fetching activities with offset " + str(params['_skip']) +
+                    " and limit " + str(params['_limit']))
+        logger.info("Fetched " + count + " activities in total")
+        response = request(url = base_url + '/activity/', params=params, auth=auth)
+        body = response.json()
+
+        data = body['data']
+
+        if len(data) == 0:
+            return
+
+        count += len(data)
+
+        ss.write_records('activities', data)
+        state['activities'] = data[-1]['date_created']
+        ss.write_bookmark(state)
+
+        has_more = 'has_more' in body and body['has_more']
+        params['_skip'] += return_limit
 
 def do_check(args):
     with open(args.config) as file:
@@ -193,6 +234,9 @@ def load_schemas(auth):
         schemas['leads'] = json.load(file)
 
     get_leads_schema(auth, schemas['leads'])
+
+    #with open(get_abs_path('schemas/activities.json')) as file:
+    #    schemas['activities'] = json.load(file)
         
     return schemas
         
@@ -218,7 +262,8 @@ def do_sync(args):
         ss.write_schema(k, schemas[k])
     
     try:
-        get_leads(auth, schemas['leads'])
+        # get_leads(auth, schemas['leads'])
+        get_activities(auth)
     except requests.exceptions.RequestException as e:
         logger.fatal("Error on " + e.request.url +
                      "; received status " + str(e.response.status_code) +
