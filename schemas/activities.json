@@ -741,7 +741,8 @@
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "format": "date-time"
           },
           "error_message": {
             "type": [

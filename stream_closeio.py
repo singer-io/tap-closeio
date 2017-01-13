@@ -10,26 +10,26 @@ import re
 import requests
 import stitchstream as ss
 import backoff
-
-logger = logging.getLogger()
+import arrow
 
 base_url = 'https://app.close.io/api/v1'
-
 return_limit = 100
 default_start_date = '2000-01-01T00:00:00Z'
-
-session = requests.Session()
 
 state = {
     'leads': default_start_date,
     'activities': default_start_date
 }
 
+logger = logging.getLogger()
+session = requests.Session()
+
 class StitchException(Exception):
+    """Used to mark Exceptions that originate within this streamer."""
     def __init__(self, message):
         self.message = message
 
-def configure_logging(level=logging.DEBUG):
+def configure_logging(level=logging.INFO):
     global logger
     logger.setLevel(level)
     ch = logging.StreamHandler()
@@ -79,7 +79,7 @@ def get_leads_custom_fields(auth):
 
     return fields
 
-def get_type(closeio_type):
+def closeio_type_to_json_type(closeio_type):
     if closeio_type == 'datetime' or closeio_type == 'date':
         return {
             'type': ['null', 'string'],
@@ -96,18 +96,25 @@ def get_leads_schema(auth, lead_schema):
 
     properties = {}
     for field in custom_fields:
-        properties[field['name']] = get_type(field['type'])
+        properties[field['name']] = closeio_type_to_json_type(field['type'])
 
     lead_schema['properties']['custom'] = {
         'type': 'object',
         'properties': properties
     }
-
-def date_to_datetime(d):
-    if isinstance(d, str) and re.match(r'\d\d\d\d-\d\d-\d\d', d):
-        return d + 'T00:00:00.00.000000+00:00'
-    else:
+    
+def normalize_datetime(d):
+    if not isinstance(d, str):
         return d
+
+    try:
+        return arrow.get(d).isoformat() 
+    except arrow.parser.ParserError:
+        try:
+            return arrow.get(d, 'D MMM YYYY HH:mm:ss Z').isoformat()
+        except arrow.parser.ParserError:
+            pass
+    raise Exception('Unrecognized date/time value ' + d)
 
 def get_contacts(auth, partial_contacts):
     contacts = []
@@ -115,7 +122,27 @@ def get_contacts(auth, partial_contacts):
         response = request(url=base_url + '/contact/' + partial_contact['id'] + '/', auth=auth)
         contacts.append(response.json())
     return contacts
+
+def normalize_lead(lead, lead_schema):
+    custom_field_schema = lead_schema['properties']['custom']
     
+    if 'tasks' in lead:
+        for task in lead['tasks']:
+            for k in ['date', 'due_date']:
+                if k in task:
+                    task[k] = normalize_datetime(task[k])
+
+    if 'date_won' in lead:
+        lead['date_won'] = normalize_datetime(lead['date_won'])
+
+    if 'custom' in lead:
+        custom = lead['custom']
+        for prop in custom_field_schema['properties']:
+            if prop in custom:
+                field = custom_field_schema['properties'][prop]
+                if 'format' in field and field['format'] == 'date-time':
+                    lead['custom'][prop] = normalize_datetime(custom[prop])
+
 def get_leads(auth, lead_schema):
     global state 
 
@@ -126,41 +153,27 @@ def get_leads(auth, lead_schema):
     }
 
     logger.info("Fetching leads starting at " + state['leads'])
+
+    count = 0
     
     has_more = True
     while has_more:
         logger.info("Fetching leads with offset " + str(params['_skip']) +
                     " and limit " + str(params['_limit']))
+        logger.info("Fetched " + str(count) + " leads in total")
         response = request(url=base_url + '/lead/', params=params, auth=auth)
         body = response.json()
-   
         data = body['data']
 
-        custom_field_schema = lead_schema['properties']['custom']
-        
-        for lead in data:
-            if 'tasks' in lead:
-                for task in lead['tasks']:
-                    for k in ['date', 'due_date']:
-                        if k in task:
-                            task[k] = date_to_datetime(task[k])
-
-            if 'date_won' in lead:
-                lead['date_won'] = date_to_datetime(lead['date_won'])
-                            
-            if 'custom' in lead:
-                custom = lead['custom']
-                for prop in custom_field_schema['properties']:
-                    if prop in custom:
-                        field = custom_field_schema['properties'][prop]
-                        if 'format' in field and field['format'] == 'date-time':
-                            lead['custom'][prop] = date_to_datetime(custom[prop])
-
-            lead['contacts'] = get_contacts(auth, lead['contacts'])
-                            
         if len(data) == 0:
             return
 
+        count += len(data)
+        
+        for lead in data:
+            normalize_lead(lead, lead_schema)
+            lead['contacts'] = get_contacts(auth, lead['contacts'])
+                            
         ss.write_records('leads', data)
         state['leads'] = data[-1]['date_updated']
         ss.write_bookmark(state)
@@ -168,12 +181,19 @@ def get_leads(auth, lead_schema):
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
 
+def normalize_activity(activity):
+    if 'envelope' in activity and 'date' in activity['envelope']:
+        activity['envelope']['date'] = normalize_datetime(activity['envelope']['date'])
+    if 'date_scheduled' in activity:
+        activity['date_scheduled'] = normalize_datetime(activity['date_scheduled'])
+    if 'send_attempts' in activity:
+        for attempt in activity['send_attempts']:
+            if 'date' in attempt:
+                attempt['date'] = normalize_datetime(attempt['date'])    
+        
 def get_activities(auth):
     global state
 
-    ## TODO: envelope.date "date": "Fri, 13 Jan 2017 15:47:13 +0000",
-    ## TODO: date_scheduled ?
-    
     params = {
         '_limit': return_limit,
         '_skip': 0,
@@ -188,7 +208,7 @@ def get_activities(auth):
     while has_more:
         logger.info("Fetching activities with offset " + str(params['_skip']) +
                     " and limit " + str(params['_limit']))
-        logger.info("Fetched " + count + " activities in total")
+        logger.info("Fetched " + str(count) + " activities in total")
         response = request(url = base_url + '/activity/', params=params, auth=auth)
         body = response.json()
 
@@ -197,6 +217,9 @@ def get_activities(auth):
         if len(data) == 0:
             return
 
+        for activity in data:
+            normalize_activity(activity)
+                
         count += len(data)
 
         ss.write_records('activities', data)
@@ -235,8 +258,8 @@ def load_schemas(auth):
 
     get_leads_schema(auth, schemas['leads'])
 
-    #with open(get_abs_path('schemas/activities.json')) as file:
-    #    schemas['activities'] = json.load(file)
+    with open(get_abs_path('schemas/activities.json')) as file:
+        schemas['activities'] = json.load(file)
         
     return schemas
         
@@ -262,7 +285,7 @@ def do_sync(args):
         ss.write_schema(k, schemas[k])
     
     try:
-        # get_leads(auth, schemas['leads'])
+        get_leads(auth, schemas['leads'])
         get_activities(auth)
     except requests.exceptions.RequestException as e:
         logger.fatal("Error on " + e.request.url +
