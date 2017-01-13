@@ -108,7 +108,14 @@ def date_to_datetime(d):
         return d + 'T00:00:00.00.000000+00:00'
     else:
         return d
-        
+
+def get_contacts(auth, partial_contacts):
+    contacts = []
+    for partial_contact in partial_contacts:
+        response = request(url=base_url + '/contact/' + partial_contact['id'] + '/', auth=auth)
+        contacts.append(response.json())
+    return contacts
+    
 def get_leads(auth, lead_schema):
     global state
     
@@ -144,6 +151,8 @@ def get_leads(auth, lead_schema):
                         field = custom_field_schema['properties'][prop]
                         if 'format' in field and field['format'] == 'date-time':
                             lead['custom'][prop] = date_to_datetime(custom[prop])
+
+            lead['contacts'] = get_contacts(auth, lead['contacts'])
                             
         if len(data) == 0:
             return
