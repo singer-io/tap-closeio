@@ -34,7 +34,7 @@ def configure_logging(level=logging.INFO):
     logger.setLevel(level)
     ch = logging.StreamHandler()
     ch.setLevel(level)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 

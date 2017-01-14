@@ -5,9 +5,7 @@ import sys
 import pprint
 import json
 
-
 past_headers = False
-
 observed_types = {}
 
 def add_observation(path):
