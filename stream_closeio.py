@@ -176,7 +176,7 @@ def get_leads(auth, lead_schema):
                             
         ss.write_records('leads', data)
         state['leads'] = data[-1]['date_updated']
-        ss.write_bookmark(state)
+        ss.write_state(state)
 
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
@@ -224,7 +224,7 @@ def get_activities(auth):
 
         ss.write_records('activities', data)
         state['activities'] = data[-1]['date_created']
-        ss.write_bookmark(state)
+        ss.write_state(state)
 
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
