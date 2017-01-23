@@ -314,7 +314,8 @@
           "is_dateless": {
             "type": [
               "null",
-              "integer"
+              "integer",
+              "boolean"
             ]
           },
           "id": {
@@ -380,7 +381,8 @@
           "is_complete": {
             "type": [
               "null",
-              "integer"
+              "integer",
+              "boolean"
             ]
           }
         }
