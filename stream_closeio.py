@@ -24,7 +24,9 @@ state = {
     'activities': default_start_date
 }
 
-logger = logging.getLogger()
+logging.config.fileConfig('/etc/stitch/logging.conf')
+logger = logging.getLogger('stitch.streamer')
+
 session = requests.Session()
 
 class StitchException(Exception):
@@ -58,7 +60,7 @@ def get_leads_custom_fields(auth):
     logger.info('Fetching leads custom fields meta data')
 
     fields = []
-    
+
     has_more = True
     while has_more:
         logger.info('Fetching leads custom fields with offset ' + str(params['_skip']) +
@@ -97,7 +99,7 @@ def get_leads_schema(auth, lead_schema):
         'type': 'object',
         'properties': properties
     }
-    
+
 def normalize_datetime(d):
 
     if d is None:
@@ -107,7 +109,7 @@ def normalize_datetime(d):
                         .format(d, type(d)))
 
     try:
-        return arrow.get(d).isoformat() 
+        return arrow.get(d).isoformat()
     except arrow.parser.ParserError:
         pass
     for fmt in ['D MMM YYYY HH:mm:ss Z']:
@@ -126,7 +128,7 @@ def get_contacts(auth, partial_contacts):
 
 def normalize_lead(lead, lead_schema):
     custom_field_schema = lead_schema['properties']['custom']
-    
+
     if 'tasks' in lead:
         for task in lead['tasks']:
             for k in ['date', 'due_date']:
@@ -147,7 +149,7 @@ def normalize_lead(lead, lead_schema):
                     lead['custom'][prop] = normalize_datetime(custom[prop])
 
 def get_leads(auth, lead_schema):
-    global state 
+    global state
 
     params = {
         '_limit': return_limit,
@@ -158,12 +160,11 @@ def get_leads(auth, lead_schema):
     logger.info("Fetching leads starting at " + state['leads'])
 
     count = 0
-    
+
     has_more = True
     while has_more:
         logger.info("Fetching leads with offset " + str(params['_skip']) +
                     " and limit " + str(params['_limit']))
-        logger.info("Fetched " + str(count) + " leads in total")
         response = request(url=base_url + '/lead/', params=params, auth=auth)
         body = response.json()
         data = body['data']
@@ -172,18 +173,19 @@ def get_leads(auth, lead_schema):
             return
 
         count += len(data)
+        logger.info("Fetched " + str(count) + " leads in total")
         
         for lead in data:
             normalize_lead(lead, lead_schema)
             lead['contacts'] = get_contacts(auth, lead['contacts'])
-                            
+
         ss.write_records('leads', data)
         state['leads'] = data[-1]['date_updated']
         ss.write_state(state)
 
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
-        
+
 
 def normalize_activity(activity):
     if 'envelope' in activity and 'date' in activity['envelope']:
@@ -193,8 +195,8 @@ def normalize_activity(activity):
     if 'send_attempts' in activity:
         for attempt in activity['send_attempts']:
             if 'date' in attempt:
-                attempt['date'] = normalize_datetime(attempt['date'])    
-        
+                attempt['date'] = normalize_datetime(attempt['date'])
+
 def get_activities(auth):
     global state
 
@@ -207,12 +209,11 @@ def get_activities(auth):
     logger.info("Fetching activities starting at " + state['activities'])
 
     count = 0
-    
+
     has_more = True
     while has_more:
         logger.info("Fetching activities with offset " + str(params['_skip']) +
                     " and limit " + str(params['_limit']))
-        logger.info("Fetched " + str(count) + " activities in total")
         response = request(url = base_url + '/activity/', params=params, auth=auth)
         body = response.json()
 
@@ -223,16 +224,20 @@ def get_activities(auth):
 
         for activity in data:
             normalize_activity(activity)
-                
+            if ('activities' not in state or
+                    state['activities'] is None or
+                    activity['date_created'] > state['activities']):
+                state['activities'] = activity['date_created']
+
         count += len(data)
+        logger.info("Fetched " + str(count) + " activities in total")
 
         ss.write_records('activities', data)
-        state['activities'] = data[-1]['date_created']
         ss.write_state(state)
-
+        
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
-        
+
 
 def do_check(args):
     with open(args.config) as file:
@@ -265,9 +270,9 @@ def load_schemas(auth):
 
     with open(get_abs_path('schemas/activities.json')) as file:
         schemas['activities'] = json.load(file)
-        
+
     return schemas
-        
+
 def do_sync(args):
     global state
     with open(args.config) as file:
@@ -288,7 +293,7 @@ def do_sync(args):
     schemas = load_schemas(auth)
     for k in schemas:
         ss.write_schema(k, schemas[k])
-    
+
     try:
         get_leads(auth, schemas['leads'])
         get_activities(auth)
@@ -296,15 +301,16 @@ def do_sync(args):
     except requests.exceptions.RequestException as e:
         logger.fatal("Error on " + e.request.url +
                      "; received status " + str(e.response.status_code) +
-                     ": " + e.response.text)        
+                     ": " + e.response.text)
         sys.exit(-1)
-        
+
+
 def main():
     global logger
     parser = argparse.ArgumentParser()
 
     subparsers = parser.add_subparsers()
-    
+
     parser_check = subparsers.add_parser('check')
     parser_check.set_defaults(func=do_check)
 
@@ -312,12 +318,12 @@ def main():
     parser_sync.set_defaults(func=do_sync)
 
     for subparser in [parser_check, parser_sync]:
-        subparser.add_argument('-c', '--config', help='Config file', required=True)
-        subparser.add_argument('-s', '--state', help='State file')
-    
+        subparser.add_argument(
+            '-c', '--config', help='Config file', required=True)
+        subparser.add_argument(
+            '-s', '--state', help='State file')
+
     args = parser.parse_args()
-    logging.config.fileConfig('/etc/stitch/logging.conf')
-    logger = logging.getLogger('streamer')
 
     if 'func' in args:
         args.func(args)
@@ -327,8 +333,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main(
-)
-
-
-
+    main()
