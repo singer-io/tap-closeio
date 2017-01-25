@@ -2,6 +2,7 @@
 
 import json
 import logging
+import logging.config
 import os
 import sys
 import argparse
@@ -13,7 +14,9 @@ import backoff
 import arrow
 
 base_url = 'https://app.close.io/api/v1'
+
 return_limit = 100
+
 default_start_date = '2000-01-01T00:00:00Z'
 
 state = {
@@ -29,14 +32,6 @@ class StitchException(Exception):
     def __init__(self, message):
         self.message = message
 
-def configure_logging(level=logging.INFO):
-    global logger
-    logger.setLevel(level)
-    ch = logging.StreamHandler()
-    ch.setLevel(level)
-    formatter = logging.Formatter('%(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
 
 def client_error(e):
     return e.response is not None and 400 <= e.response.status_code < 500
@@ -104,14 +99,20 @@ def get_leads_schema(auth, lead_schema):
     }
     
 def normalize_datetime(d):
-    if not isinstance(d, str):
+
+    if d is None:
         return d
+    if not isinstance(d, str):
+        raise Exception('Expected string but got {} of type {}'
+                        .format(d, type(d)))
 
     try:
         return arrow.get(d).isoformat() 
     except arrow.parser.ParserError:
+        pass
+    for fmt in ['D MMM YYYY HH:mm:ss Z']:
         try:
-            return arrow.get(d, 'D MMM YYYY HH:mm:ss Z').isoformat()
+            return arrow.get(d, fmt).isoformat()
         except arrow.parser.ParserError:
             pass
     raise Exception('Unrecognized date/time value ' + d)
@@ -132,8 +133,10 @@ def normalize_lead(lead, lead_schema):
                 if k in task:
                     task[k] = normalize_datetime(task[k])
 
-    if 'date_won' in lead:
-        lead['date_won'] = normalize_datetime(lead['date_won'])
+    if 'opportunities' in lead:
+        for op in lead['opportunities']:
+            if 'date_won' in op:
+                op['date_won'] = normalize_datetime(op['date_won'])
 
     if 'custom' in lead:
         custom = lead['custom']
@@ -180,6 +183,7 @@ def get_leads(auth, lead_schema):
 
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
+        
 
 def normalize_activity(activity):
     if 'envelope' in activity and 'date' in activity['envelope']:
@@ -228,6 +232,7 @@ def get_activities(auth):
 
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
+        
 
 def do_check(args):
     with open(args.config) as file:
@@ -287,13 +292,15 @@ def do_sync(args):
     try:
         get_leads(auth, schemas['leads'])
         get_activities(auth)
+        logger.info("Streamer exiting normally")
     except requests.exceptions.RequestException as e:
         logger.fatal("Error on " + e.request.url +
                      "; received status " + str(e.response.status_code) +
-                     ": " + e.response.text)
+                     ": " + e.response.text)        
         sys.exit(-1)
         
 def main():
+    global logger
     parser = argparse.ArgumentParser()
 
     subparsers = parser.add_subparsers()
@@ -309,7 +316,8 @@ def main():
         subparser.add_argument('-s', '--state', help='State file')
     
     args = parser.parse_args()
-    configure_logging()
+    logging.config.fileConfig('/etc/stitch/logging.conf')
+    logger = logging.getLogger('streamer')
 
     if 'func' in args:
         args.func(args)
@@ -319,4 +327,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(
+)
+
+
+
