@@ -24,8 +24,7 @@ state = {
     'activities': default_start_date
 }
 
-logging.config.fileConfig('/etc/stitch/logging.conf')
-logger = logging.getLogger('stitch.streamer')
+logger = ss.get_logger()
 
 session = requests.Session()
 
@@ -33,7 +32,6 @@ class StitchException(Exception):
     """Used to mark Exceptions that originate within this streamer."""
     def __init__(self, message):
         self.message = message
-
 
 def client_error(e):
     return e.response is not None and 400 <= e.response.status_code < 500
@@ -263,12 +261,12 @@ def get_abs_path(path):
 def load_schemas(auth):
     schemas = {}
 
-    with open(get_abs_path('schemas/leads.json')) as file:
+    with open(get_abs_path('stream_closeio/leads.json')) as file:
         schemas['leads'] = json.load(file)
 
     get_leads_schema(auth, schemas['leads'])
 
-    with open(get_abs_path('schemas/activities.json')) as file:
+    with open(get_abs_path('stream_closeio/activities.json')) as file:
         schemas['activities'] = json.load(file)
 
     return schemas
