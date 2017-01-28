@@ -212,6 +212,9 @@ def get_activities(auth):
 
     count = 0
 
+    if 'activities' in state:
+        last_date_created = state['activities']
+    
     has_more = True
     while has_more:
         logger.info("Fetching activities with offset " + str(params['_skip']) +
@@ -222,24 +225,24 @@ def get_activities(auth):
         data = body['data']
 
         if len(data) == 0:
-            return
+            break
 
         for activity in data:
             normalize_activity(activity)
-            if ('activities' not in state or
-                    state['activities'] is None or
-                    activity['date_created'] > state['activities']):
-                state['activities'] = activity['date_created']
+            if (last_date_created is None or
+                    activity['date_created'] > last_date_created):
+                last_date_created = activity['date_created']
 
         count += len(data)
         logger.info("Fetched " + str(count) + " activities in total")
 
         ss.write_records('activities', data)
-        ss.write_state(state)
         
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
 
+    state['activities'] = last_date_created
+    ss.write_state(state)
 
 def do_check(args):
     with open(args.config) as file:
