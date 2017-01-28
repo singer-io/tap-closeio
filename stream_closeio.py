@@ -110,7 +110,11 @@ def normalize_datetime(d):
         return arrow.get(d).isoformat()
     except arrow.parser.ParserError:
         pass
-    for fmt in ['D MMM YYYY HH:mm:ss Z']:
+    # Some of CloseIO's dates are like Mon, Dec 12, 2015 at 2:15 PM. We
+    # need to remove the " at " for arrow to be able to parse it.
+    d = d.replace(' at ', ' ')
+    for fmt in ['D MMM YYYY HH:mm:ss Z',
+                'ddd, MMM D, YYYY h:m A']:
         try:
             return arrow.get(d, fmt).isoformat()
         except arrow.parser.ParserError:
