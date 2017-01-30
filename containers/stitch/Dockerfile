@@ -1,8 +1,8 @@
 FROM 218546966473.dkr.ecr.us-east-1.amazonaws.com/stitch-orchestrator:0.0.3
 
 RUN mkdir /code/stream-closeio
-WORKDIR /code
-ADD . /code
+WORKDIR /code/stream-closeio
+ADD . /code/stream-closeio
 
 RUN python3 setup.py install
 
