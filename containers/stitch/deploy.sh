@@ -7,7 +7,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-name=stitchdata/stream-closeio
+name=platform.closeio
 version=$1
 repo=218546966473.dkr.ecr.us-east-1.amazonaws.com
 docker build -t $name:$version -f Dockerfile ../..
