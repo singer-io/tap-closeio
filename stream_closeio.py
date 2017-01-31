@@ -314,27 +314,14 @@ def main():
     global logger
     parser = argparse.ArgumentParser()
 
-    subparsers = parser.add_subparsers()
-
-    parser_check = subparsers.add_parser('check')
-    parser_check.set_defaults(func=do_check)
-
-    parser_sync = subparsers.add_parser('sync')
-    parser_sync.set_defaults(func=do_sync)
-
-    for subparser in [parser_check, parser_sync]:
-        subparser.add_argument(
-            '-c', '--config', help='Config file', required=True)
-        subparser.add_argument(
-            '-s', '--state', help='State file')
+    parser.add_argument(
+        '-c', '--config', help='Config file', required=True)
+    parser.add_argument(
+        '-s', '--state', help='State file')
 
     args = parser.parse_args()
 
-    if 'func' in args:
-        args.func(args)
-    else:
-        parser.print_help()
-        exit(1)
+    do_sync(args)
 
 
 if __name__ == '__main__':
