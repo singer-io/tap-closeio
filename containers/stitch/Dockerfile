@@ -6,7 +6,7 @@ ADD . /code/stream-closeio
 
 RUN python3 setup.py install
 
-CMD stitch-orchestrator sync \
+CMD stitch-orchestrator \
   --streamer stream-closeio \
   --persister persist-stitch \
   --client-id $STITCH_CLIENT_ID \
