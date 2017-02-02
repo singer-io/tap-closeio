@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='tap-closeio',
-      version='0.1.2',
+      version='0.1.1',
       description='Taps CloseIO data',
       author='Stitch',
       url='https://github.com/stitchstreams/tap-closeio',
