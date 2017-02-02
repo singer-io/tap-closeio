@@ -1,5 +1,5 @@
-# stream-close-io
-Streamer for Close.io
+# tap-close-io
+Tap for Close.io
 
 ---
 

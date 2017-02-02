@@ -29,7 +29,7 @@ logger = ss.get_logger()
 session = requests.Session()
 
 class StitchException(Exception):
-    """Used to mark Exceptions that originate within this streamer."""
+    """Used to mark Exceptions that originate within this tap."""
     def __init__(self, message):
         self.message = message
 
@@ -302,7 +302,7 @@ def do_sync(args):
     try:
         get_leads(auth, schemas['leads'])
         get_activities(auth)
-        logger.info("Streamer exiting normally")
+        logger.info("Tap exiting normally")
     except requests.exceptions.RequestException as e:
         logger.fatal("Error on " + e.request.url +
                      "; received status " + str(e.response.status_code) +
