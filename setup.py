@@ -29,6 +29,9 @@ setup(name='tap-closeio',
           'tap_closeio': [
               'leads.json',
               'activities.json'
+              ],
+          '': [
+              'VERSION'
               ]
           }
 )
