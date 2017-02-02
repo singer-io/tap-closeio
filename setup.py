@@ -3,8 +3,11 @@
 from setuptools import setup, find_packages
 import os.path
 
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'VERSION')) as f:
+    version = f.read().strip()
+
 setup(name='tap-closeio',
-      version='0.1.0',
+      version=version,
       description='Taps CloseIO data',
       author='Stitch',
       url='https://github.com/stitchstreams/tap-closeio',
