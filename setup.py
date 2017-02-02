@@ -3,13 +3,13 @@
 from setuptools import setup, find_packages
 import os.path
 
-setup(name='stream-closeio',
+setup(name='tap-closeio',
       version='0.1.0',
-      description='Streams CloseIO data',
+      description='Taps CloseIO data',
       author='Stitch',
-      url='https://github.com/stitchstreams/stream-closeio',
+      url='https://github.com/stitchstreams/tap-closeio',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
-      py_modules=['stream_closeio'],
+      py_modules=['tap_closeio'],
       install_requires=['stitchclient>=0.4.1',
                         'stitchstream-python>=0.4.1',
                         'requests==2.12.4',
@@ -19,11 +19,11 @@ setup(name='stream-closeio',
                         'python-dateutil==2.6.0'],
       entry_points='''
           [console_scripts]
-          stream-closeio=stream_closeio:main
+          tap-closeio=tap_closeio:main
       ''',
-      packages=['stream_closeio'],
+      packages=['tap_closeio'],
       package_data = {
-          'stream_closeio': [
+          'tap_closeio': [
               'leads.json',
               'activities.json'
               ]

@@ -268,12 +268,12 @@ def get_abs_path(path):
 def load_schemas(auth):
     schemas = {}
 
-    with open(get_abs_path('stream_closeio/leads.json')) as file:
+    with open(get_abs_path('tap_closeio/leads.json')) as file:
         schemas['leads'] = json.load(file)
 
     get_leads_schema(auth, schemas['leads'])
 
-    with open(get_abs_path('stream_closeio/activities.json')) as file:
+    with open(get_abs_path('tap_closeio/activities.json')) as file:
         schemas['activities'] = json.load(file)
 
     return schemas
