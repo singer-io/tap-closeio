@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
-import os.path
-
-with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'VERSION')) as f:
-    version = f.read().strip()
 
 setup(name='tap-closeio',
-      version=version,
+      version='0.1.2',
       description='Taps CloseIO data',
       author='Stitch',
       url='https://github.com/stitchstreams/tap-closeio',
@@ -29,9 +25,6 @@ setup(name='tap-closeio',
           'tap_closeio': [
               'leads.json',
               'activities.json'
-              ],
-          '': [
-              'VERSION'
               ]
           }
 )
