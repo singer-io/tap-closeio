@@ -44,7 +44,6 @@ def client_error(e):
 def request(**kwargs):
     if 'method' not in kwargs:
         kwargs['method'] = 'get'
-
     response = session.request(**kwargs)
     response.raise_for_status()
     return response
@@ -296,8 +295,8 @@ def do_sync(args):
     auth = (config['api_key'],'')
 
     schemas = load_schemas(auth)
-    for k in schemas:
-        ss.write_schema(k, schemas[k])
+    ss.write_schema('leads', schemas['leads'], 'id')
+    ss.write_schema('activities', schemas['activities'], 'id')
 
     try:
         get_leads(auth, schemas['leads'])
