@@ -9,7 +9,7 @@ import argparse
 import re
 
 import requests
-import stitchstream as ss
+import singer
 import backoff
 import arrow
 
@@ -24,7 +24,7 @@ state = {
     'activities': default_start_date
 }
 
-logger = ss.get_logger()
+logger = singer.get_logger()
 
 session = requests.Session()
 
@@ -180,9 +180,9 @@ def get_leads(auth, lead_schema):
             normalize_lead(lead, lead_schema)
             lead['contacts'] = get_contacts(auth, lead['contacts'])
 
-        ss.write_records('leads', data)
+        singer.write_records('leads', data)
         state['leads'] = data[-1]['date_updated']
-        ss.write_state(state)
+        singer.write_state(state)
 
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
@@ -235,13 +235,13 @@ def get_activities(auth):
         count += len(data)
         logger.info("Fetched " + str(count) + " activities in total")
 
-        ss.write_records('activities', data)
+        singer.write_records('activities', data)
         
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
 
     state['activities'] = last_date_created
-    ss.write_state(state)
+    singer.write_state(state)
 
 def do_check(args):
     with open(args.config) as file:
@@ -295,8 +295,8 @@ def do_sync(args):
     auth = (config['api_key'],'')
 
     schemas = load_schemas(auth)
-    ss.write_schema('leads', schemas['leads'], 'id')
-    ss.write_schema('activities', schemas['activities'], 'id')
+    singer.write_schema('leads', schemas['leads'], 'id')
+    singer.write_schema('activities', schemas['activities'], 'id')
 
     try:
         get_leads(auth, schemas['leads'])
