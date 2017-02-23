@@ -175,7 +175,7 @@ def get_leads(auth, lead_schema):
 
         count += len(data)
         logger.info("Fetched " + str(count) + " leads in total")
-        
+
         for lead in data:
             normalize_lead(lead, lead_schema)
             lead['contacts'] = get_contacts(auth, lead['contacts'])
@@ -213,7 +213,7 @@ def get_activities(auth):
 
     if 'activities' in state:
         last_date_created = state['activities']
-    
+
     has_more = True
     while has_more:
         logger.info("Fetching activities with offset " + str(params['_skip']) +
@@ -236,7 +236,7 @@ def get_activities(auth):
         logger.info("Fetched " + str(count) + " activities in total")
 
         singer.write_records('activities', data)
-        
+
         has_more = 'has_more' in body and body['has_more']
         params['_skip'] += return_limit
 
@@ -278,9 +278,11 @@ def load_schemas(auth):
     return schemas
 
 def do_sync(args):
-    global state
+    global state, default_start_date
     with open(args.config) as file:
         config = json.load(file)
+
+    default_start_date = config['start_date']
 
     if args.state != None:
         logger.info("Loading state from " + args.state)
