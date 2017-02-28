@@ -54,6 +54,13 @@ def request(endpoint, params=None):
     if resp.headers.get('X-Rate-Limit-Remaining') == "0":
         time.sleep(int(resp.headers['X-Rate-Limit-Reset']))
 
+    # if we're already over the limit, we'll get a 429
+    # sleep for the rate_reset seconds and then retry
+    if resp.status_code == 429:
+        data = resp.json()
+        time.sleep(data["rate_reset"])
+        return request(endpoint, params)
+
     resp.raise_for_status()
 
     return resp
@@ -98,9 +105,6 @@ def sync_activities():
         if row['date_created'] >= start:
             singer.write_record("activities", row)
             utils.update_state(STATE, "activities", row['date_created'])
-
-        if i % PER_PAGE == 0:
-            singer.write_state(STATE)
 
     singer.write_state(STATE)
 
