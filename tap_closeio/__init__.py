@@ -149,10 +149,10 @@ def sync_leads():
     singer.write_schema("leads", schema, ["id"])
 
     start = get_start("leads")
-    params = {'query': 'data_updated >= {} sort:date_updated'.format(start)}
+    params = {'query': 'date_updated >= {} sort:date_updated'.format(start)}
 
-    for i, row in enumerate(gen_request("leads/", params)):
-        transform_lead(lead, custom_schema)
+    for i, row in enumerate(gen_request("lead/", params)):
+        transform_lead(row, custom_schema)
         row['contacts'] = [request("contact/{}/".format(contact['id'])).json()
                            for contact in row['contacts']]
         if row['date_updated'] >= start:
