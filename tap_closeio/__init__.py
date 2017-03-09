@@ -45,8 +45,12 @@ def get_start(key):
 def request(endpoint, params=None):
     url = BASE_URL + endpoint
     params = params or {}
+    headers = {}
+    if 'user_agent' in CONFIG:
+        headers['User-Agent'] = CONFIG['user_agent']
+
     auth = (CONFIG['api_key'], "")
-    req = requests.Request("GET", url, params=params, auth=auth).prepare()
+    req = requests.Request("GET", url, params=params, auth=auth, headers=headers).prepare()
     logger.info("GET {}".format(req.url))
     resp = session.send(req)
 
