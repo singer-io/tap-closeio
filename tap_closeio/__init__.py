@@ -153,7 +153,8 @@ def sync_leads():
     singer.write_schema("leads", schema, ["id"])
 
     start = get_start("leads")
-    params = {'query': 'date_updated >= {} sort:date_updated'.format(start)}
+    s = utils.strptime(start).strftime("%Y-%m-%d %H:%M")
+    params = {'query': 'date_updated>="{}" sort:date_updated'.format(s)}
 
     for i, row in enumerate(gen_request("lead/", params)):
         transform_lead(row, custom_schema)
