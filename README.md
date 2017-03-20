@@ -28,7 +28,7 @@ This tap:
     Create a JSON file called `config.json` containing the api key you just generated.
 
     ```json
-    {"api_key": "your-api-token"}
+    {"api_key": "your-api-token", "start_date": "2017-01-01T00:00:00Z"}
     ```
 
 4. [Optional] Create the initial state file
