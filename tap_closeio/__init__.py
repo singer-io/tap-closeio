@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
+import os
+import time
+
 import backoff
 import pendulum
 import requests
+import dateutil.parser
 import singer
-
-from tap_closeio import utils
+from singer import utils
 
 
 REQUIRED_CONFIG_KEYS = ["start_date", "api_key"]
@@ -15,15 +18,21 @@ BASE_URL = "https://app.close.io/api/v1/"
 CONFIG = {}
 STATE = {}
 
-logger = singer.get_logger()
-session = requests.session()
+LOGGER = singer.get_logger()
+SESSION = requests.session()
 
 
-def transform_datetime(dt):
-    if dt is None:
+def get_abs_path(path):
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
+def load_schema(entity):
+    return utils.load_json(get_abs_path("schemas/{}.json".format(entity)))
+
+def transform_datetime(datetime):
+    if datetime is None:
         return None
 
-    return pendulum.parse(dt).format(utils.DATETIME_FMT)
+    return pendulum.parse(datetime).format(utils.DATETIME_FMT)
 
 
 def transform_datetimes(item, datetime_fields):
@@ -51,8 +60,8 @@ def request(endpoint, params=None):
 
     auth = (CONFIG['api_key'], "")
     req = requests.Request("GET", url, params=params, auth=auth, headers=headers).prepare()
-    logger.info("GET {}".format(req.url))
-    resp = session.send(req)
+    LOGGER.info("GET {}".format(req.url))
+    resp = SESSION.send(req)
 
     # if we're hitting the rate limit cap, sleep until the limit resets
     if resp.headers.get('X-Rate-Limit-Remaining') == "0":
@@ -98,17 +107,17 @@ def transform_activity(activity):
 
 
 def sync_activities():
-    schema = utils.load_schema("activities")
+    schema = load_schema("activities")
     singer.write_schema("activities", schema, ["id"])
 
     start = get_start("activities")
     params = {"date_created__gt": start}
 
-    for i, row in enumerate(gen_request("activity/", params)):
+    for row in gen_request("activity/", params):
         transform_activity(row)
         if row['date_created'] >= start:
             singer.write_record("activities", row)
-            utils.update_state(STATE, "activities", row['date_created'])
+            utils.update_state(STATE, "activities", dateutil.parser.parse(row['date_created']))
 
     singer.write_state(STATE)
 
@@ -147,14 +156,14 @@ def transform_lead(lead, custom_schema):
 
 
 def sync_leads():
-    schema = utils.load_schema("leads")
+    schema = load_schema("leads")
     custom_schema = get_custom_leads_schema()
     schema["properties"]["custom"] = custom_schema
     singer.write_schema("leads", schema, ["id"])
 
     start = get_start("leads")
-    s = utils.strptime(start).strftime("%Y-%m-%d %H:%M")
-    params = {'query': 'date_updated>="{}" sort:date_updated'.format(s)}
+    formatted_start = dateutil.parser.parse(start).strftime("%Y-%m-%d %H:%M")
+    params = {'query': 'date_updated>="{}" sort:date_updated'.format(formatted_start)}
 
     for i, row in enumerate(gen_request("lead/", params)):
         transform_lead(row, custom_schema)
@@ -162,7 +171,7 @@ def sync_leads():
                            for contact in row['contacts']]
         if row['date_updated'] >= start:
             singer.write_record("leads", row)
-            utils.update_state(STATE, "leads", row['date_updated'])
+            utils.update_state(STATE, "leads", dateutil.parser.parse(row['date_updated']))
 
         if i % PER_PAGE == 0:
             singer.write_state(STATE)
@@ -171,10 +180,10 @@ def sync_leads():
 
 
 def do_sync():
-    logger.info("Starting sync")
+    LOGGER.info("Starting sync")
     sync_activities()
     sync_leads()
-    logger.info("Completed sync")
+    LOGGER.info("Completed sync")
 
 
 def main():
