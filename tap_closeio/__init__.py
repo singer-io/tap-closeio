@@ -4,6 +4,7 @@ import backoff
 import pendulum
 import requests
 import singer
+import dateutil.parser
 
 from tap_closeio import utils
 
@@ -108,7 +109,7 @@ def sync_activities():
         transform_activity(row)
         if row['date_created'] >= start:
             singer.write_record("activities", row)
-            utils.update_state(STATE, "activities", row['date_created'])
+            utils.update_state(STATE, "activities", dateutil.parser.parse(row['date_created']))
 
     singer.write_state(STATE)
 
@@ -153,7 +154,7 @@ def sync_leads():
     singer.write_schema("leads", schema, ["id"])
 
     start = get_start("leads")
-    s = utils.strptime(start).strftime("%Y-%m-%d %H:%M")
+    s = dateutil.parser.parse(start).strftime("%Y-%m-%d %H:%M")
     params = {'query': 'date_updated>="{}" sort:date_updated'.format(s)}
 
     for i, row in enumerate(gen_request("lead/", params)):
@@ -162,7 +163,7 @@ def sync_leads():
                            for contact in row['contacts']]
         if row['date_updated'] >= start:
             singer.write_record("leads", row)
-            utils.update_state(STATE, "leads", row['date_updated'])
+            utils.update_state(STATE, "leads", dateutil.parser.parse(row['date_updated']))
 
         if i % PER_PAGE == 0:
             singer.write_state(STATE)
