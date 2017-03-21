@@ -3,10 +3,11 @@
 import backoff
 import pendulum
 import requests
+import os
 import singer
 import dateutil.parser
 
-from tap_closeio import utils
+from singer import utils
 
 
 REQUIRED_CONFIG_KEYS = ["start_date", "api_key"]
@@ -19,6 +20,12 @@ STATE = {}
 logger = singer.get_logger()
 session = requests.session()
 
+
+def get_abs_path(path):
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
+def load_schema(entity):
+    return utils.load_json(get_abs_path("schemas/{}.json".format(entity)))
 
 def transform_datetime(dt):
     if dt is None:
@@ -99,7 +106,7 @@ def transform_activity(activity):
 
 
 def sync_activities():
-    schema = utils.load_schema("activities")
+    schema = load_schema("activities")
     singer.write_schema("activities", schema, ["id"])
 
     start = get_start("activities")
@@ -148,7 +155,7 @@ def transform_lead(lead, custom_schema):
 
 
 def sync_leads():
-    schema = utils.load_schema("leads")
+    schema = load_schema("leads")
     custom_schema = get_custom_leads_schema()
     schema["properties"]["custom"] = custom_schema
     singer.write_schema("leads", schema, ["id"])
