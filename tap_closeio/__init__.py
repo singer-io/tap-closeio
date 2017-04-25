@@ -54,7 +54,7 @@ def get_start(key):
 
 
 def parse_source_from_url(url):
-    match = re.match('^(\w+)\/', url)
+    match = re.match(r'^(\w+)\/', url)
     if match:
         return match.group(1)
 
