@@ -10,10 +10,9 @@ setup(name='tap-closeio',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_closeio'],
       install_requires=[
-          'singer-python==1.0.0',
+          'singer-python==1.6.0a2',
           'requests==2.12.4',
-          'backoff==1.3.2',
-          'pendulum==1.1.0',
+          'backoff==1.3.2'
       ],
       entry_points='''
           [console_scripts]

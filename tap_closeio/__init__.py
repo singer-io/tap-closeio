@@ -2,12 +2,14 @@
 
 import os
 import time
+import re
 
 import backoff
 import pendulum
 import requests
 import dateutil.parser
 import singer
+import singer.stats
 from singer import utils
 
 
@@ -51,6 +53,12 @@ def get_start(key):
     return STATE[key]
 
 
+def parse_source_from_url(url):
+    match = re.match(r'^(\w+)\/', url)
+    if match:
+        return match.group(1)
+
+
 def request(endpoint, params=None):
     url = BASE_URL + endpoint
     params = params or {}
@@ -61,7 +69,13 @@ def request(endpoint, params=None):
     auth = (CONFIG['api_key'], "")
     req = requests.Request("GET", url, params=params, auth=auth, headers=headers).prepare()
     LOGGER.info("GET {}".format(req.url))
-    resp = SESSION.send(req)
+
+    with singer.stats.Timer(source=parse_source_from_url(endpoint)) as stats:
+        resp = SESSION.send(req)
+        stats.http_status_code = resp.status_code
+        json = resp.json()
+        if 'data' in json:
+            stats.record_count = len(json['data'])
 
     # if we're hitting the rate limit cap, sleep until the limit resets
     if resp.headers.get('X-Rate-Limit-Remaining') == "0":
@@ -70,13 +84,12 @@ def request(endpoint, params=None):
     # if we're already over the limit, we'll get a 429
     # sleep for the rate_reset seconds and then retry
     if resp.status_code == 429:
-        data = resp.json()
-        time.sleep(data["rate_reset"])
+        time.sleep(json["rate_reset"])
         return request(endpoint, params)
 
     resp.raise_for_status()
 
-    return resp
+    return json
 
 
 def gen_request(endpoint, params=None):
@@ -85,12 +98,11 @@ def gen_request(endpoint, params=None):
     params['_skip'] = 0
 
     while True:
-        resp = request(endpoint, params)
-        data = resp.json()
-        for row in data['data']:
+        body = request(endpoint, params)
+        for row in body['data']:
             yield row
 
-        if not data.get("has_more", False):
+        if not body.get("has_more"):
             break
 
         params['_skip'] += PER_PAGE
@@ -167,7 +179,7 @@ def sync_leads():
 
     for i, row in enumerate(gen_request("lead/", params)):
         transform_lead(row, custom_schema)
-        row['contacts'] = [request("contact/{}/".format(contact['id'])).json()
+        row['contacts'] = [request("contact/{}/".format(contact['id']))
                            for contact in row['contacts']]
         if row['date_updated'] >= start:
             singer.write_record("leads", row)
