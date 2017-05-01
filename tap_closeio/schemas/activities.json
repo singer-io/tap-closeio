@@ -551,8 +551,10 @@
     },
     "date_scheduled": {
       "type": [
-        "null"
-      ]
+        "null",
+        "string"
+      ],
+      "format": "date-time"
     },
     "subject": {
       "type": [
