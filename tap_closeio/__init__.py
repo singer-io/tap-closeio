@@ -72,7 +72,7 @@ def request(endpoint, params=None):
 
     with metrics.http_request_timer(parse_source_from_url(endpoint)) as timer:
         resp = SESSION.send(req)
-        timer.http_status_code = resp.status_code
+        timer.tags[metrics.Tag.http_status_code] = resp.status_code
         json = resp.json()
 
     # if we're hitting the rate limit cap, sleep until the limit resets
