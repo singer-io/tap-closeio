@@ -9,7 +9,7 @@ import pendulum
 import requests
 import dateutil.parser
 import singer
-import singer.stats
+import singer.metrics as metrics
 from singer import utils
 
 
@@ -70,12 +70,10 @@ def request(endpoint, params=None):
     req = requests.Request("GET", url, params=params, auth=auth, headers=headers).prepare()
     LOGGER.info("GET {}".format(req.url))
 
-    with singer.stats.Timer(source=parse_source_from_url(endpoint)) as stats:
+    with metrics.http_request_timer(parse_source_from_url(endpoint)) as timer:
         resp = SESSION.send(req)
-        stats.http_status_code = resp.status_code
+        timer.tags[metrics.Tag.http_status_code] = resp.status_code
         json = resp.json()
-        if 'data' in json:
-            stats.record_count = len(json['data'])
 
     # if we're hitting the rate limit cap, sleep until the limit resets
     if resp.headers.get('X-Rate-Limit-Remaining') == "0":
@@ -97,15 +95,18 @@ def gen_request(endpoint, params=None):
     params['_limit'] = PER_PAGE
     params['_skip'] = 0
 
-    while True:
-        body = request(endpoint, params)
-        for row in body['data']:
-            yield row
+    with metrics.record_counter(parse_source_from_url(endpoint)) as counter:
+        while True:
+            body = request(endpoint, params)
+            for row in body['data']:
+                counter.increment()
+                yield row
 
-        if not body.get("has_more"):
-            break
+            if not body.get("has_more"):
+                break
 
-        params['_skip'] += PER_PAGE
+            params['_skip'] += PER_PAGE
+
 
 
 def transform_activity(activity):
