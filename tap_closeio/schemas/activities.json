@@ -270,7 +270,8 @@
     },
     "transferred_from": {
       "type": [
-        "null"
+          "null",
+          "string"
       ]
     },
     "user_id": {
@@ -335,7 +336,8 @@
     },
     "transferred_to": {
       "type": [
-        "null"
+        "null",
+        "string"
       ]
     },
     "attachments": {
