@@ -93,7 +93,7 @@ def request(endpoint, params=None):
 def gen_request(endpoint, params=None):
     params = params or {}
     params['_limit'] = PER_PAGE
-    params['_skip'] = 0
+    params['_skip'] = STATE.get('_skip', 0)
 
     with metrics.record_counter(parse_source_from_url(endpoint)) as counter:
         while True:
@@ -106,7 +106,11 @@ def gen_request(endpoint, params=None):
                 break
 
             params['_skip'] += PER_PAGE
+            STATE['_skip'] = params['_skip']
+            singer.write_state(STATE)
 
+    STATE.pop('_skip', None)
+    singer.write_state(STATE)
 
 
 def transform_activity(activity):
