@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import collections
 import os
 import time
 import re
@@ -196,10 +197,36 @@ def sync_leads():
     singer.write_state(STATE)
 
 
+Stream = collections.namedtuple('Stream', ['name', 'sync'])
+STREAMS = [
+    Stream('activities', sync_activities),
+    Stream('leads', sync_leads),
+]
+
+
 def do_sync():
     LOGGER.info("Starting sync")
-    sync_activities()
-    sync_leads()
+
+    for name, sync in STREAMS:
+        # If active_stream is missing, we'll sync
+        # If active_stream matches, we'll sync
+        # if active_stream doesn't match, we'll skip
+        if STATE.get('active_stream', name) != name:
+            LOGGER.info("Skipping {}".format(name))
+            continue
+
+        LOGGER.info("Syncing {}".format(name))
+
+        # Set the active_stream to the current stream before starting sync
+        STATE['active_stream'] = name
+        singer.write_state(STATE)
+
+        sync()
+
+        # Remove the active_stream after finishing sync
+        STATE.pop('active_stream', None)
+        singer.write_state(STATE)
+
     LOGGER.info("Completed sync")
 
 
