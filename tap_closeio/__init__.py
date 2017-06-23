@@ -130,13 +130,15 @@ def sync_activities():
 
     start = get_start("activities")
     params = {"date_created__gt": start}
+    last_updated = start
 
     for row in gen_request("activity/", params):
         transform_activity(row)
         if row['date_created'] >= start:
             singer.write_record("activities", row)
-            utils.update_state(STATE, "activities", dateutil.parser.parse(row['date_created']))
+            last_updated = max(dateutil.parser.parse(row['date_created']), last_updated)
 
+    utils.update_state(STATE, "activities", last_updated)
     singer.write_state(STATE)
 
 
@@ -182,6 +184,7 @@ def sync_leads():
     start = get_start("leads")
     formatted_start = dateutil.parser.parse(start).strftime("%Y-%m-%d %H:%M")
     params = {'query': 'date_updated>="{}" sort:date_updated'.format(formatted_start)}
+    last_updated = start
 
     for i, row in enumerate(gen_request("lead/", params)):
         transform_lead(row, custom_schema)
@@ -189,11 +192,9 @@ def sync_leads():
                            for contact in row['contacts']]
         if row['date_updated'] >= start:
             singer.write_record("leads", row)
-            utils.update_state(STATE, "leads", dateutil.parser.parse(row['date_updated']))
+            last_updated = max(dateutil.parser.parse(row['date_updated']), last_updated)
 
-        if i % PER_PAGE == 0:
-            singer.write_state(STATE)
-
+    utils.update_state(STATE, "leads", last_updated)
     singer.write_state(STATE)
 
 
