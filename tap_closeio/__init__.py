@@ -208,7 +208,7 @@ STREAMS = [
 def do_sync():
     LOGGER.info("Starting sync")
 
-    for name, sync in STREAMS:
+    for name, sync in STREAMS.items():
         # If active_stream is missing, we'll sync
         # If active_stream matches, we'll sync
         # if active_stream doesn't match, we'll skip
