@@ -34,6 +34,14 @@ def transform_datetime(datetime):
     if datetime is None:
         return None
 
+    # It's not documented, but activiy.email.dates can contain a valid date
+    # followed by invalid data, for example (both real examples):
+    #   Fri, 01 Feb 2013 00:54:51 +0000 (UTC)
+    #   Fri, 19 May 2017 10:57:03 +0200 (added by foo@bar.com)
+    #
+    # Get around this by truncating anything beyond the length of the longest valid date:
+    datetime = datetime[:31]
+
     return pendulum.parse(datetime).format(utils.DATETIME_FMT)
 
 
