@@ -34,14 +34,6 @@ def transform_datetime(datetime):
     if datetime is None:
         return None
 
-    # It's not documented, but activiy.email.dates can contain a valid date
-    # followed by invalid data, for example (both real examples):
-    #   Fri, 01 Feb 2013 00:54:51 +0000 (UTC)
-    #   Fri, 19 May 2017 10:57:03 +0200 (added by foo@bar.com)
-    #
-    # Get around this by truncating anything beyond the length of the longest valid date:
-    datetime = datetime[:31]
-
     return pendulum.parse(datetime).format(utils.DATETIME_FMT)
 
 
@@ -119,8 +111,13 @@ def gen_request(endpoint, params=None):
 
 def transform_activity(activity):
     transform_datetimes(activity, ["date_scheduled"])
-    if "envelope" in activity:
-        transform_datetimes(activity["envelope"], ["date"])
+
+    # activity["envelope"]["date"] has many different formats, some of which
+    # aren't recognized by pendulum. For this reason, we treat this field as a
+    # string. Examples:
+    # - Fri, 01 Feb 2013 00:54:51 +0000 (UTC)
+    # - Fri, 19 May 2017 10:57:03 +0200 (added by foo@bar.com)
+    # - 4/21/17 9:21 AM (GMT-05:00)
 
     if "send_attempts" in activity:
         for item in activity["send_attempts"]:
