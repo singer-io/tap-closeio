@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import collections
 import os
 import time
 import re
@@ -93,7 +94,7 @@ def request(endpoint, params=None):
 def gen_request(endpoint, params=None):
     params = params or {}
     params['_limit'] = PER_PAGE
-    params['_skip'] = 0
+    params['_skip'] = STATE.get('_skip', 0)
 
     with metrics.record_counter(parse_source_from_url(endpoint)) as counter:
         while True:
@@ -106,7 +107,11 @@ def gen_request(endpoint, params=None):
                 break
 
             params['_skip'] += PER_PAGE
+            STATE['_skip'] = params['_skip']
+            singer.write_state(STATE)
 
+    STATE.pop('_skip', None)
+    singer.write_state(STATE)
 
 
 def transform_activity(activity):
@@ -130,13 +135,15 @@ def sync_activities():
 
     start = get_start("activities")
     params = {"date_created__gt": start}
+    last_updated = start
 
     for row in gen_request("activity/", params):
         transform_activity(row)
         if row['date_created'] >= start:
             singer.write_record("activities", row)
-            utils.update_state(STATE, "activities", dateutil.parser.parse(row['date_created']))
+            last_updated = max(dateutil.parser.parse(row['date_created']), last_updated)
 
+    utils.update_state(STATE, "activities", last_updated)
     singer.write_state(STATE)
 
 
@@ -182,6 +189,7 @@ def sync_leads():
     start = get_start("leads")
     formatted_start = dateutil.parser.parse(start).strftime("%Y-%m-%d %H:%M")
     params = {'query': 'date_updated>="{}" sort:date_updated'.format(formatted_start)}
+    last_updated = start
 
     for i, row in enumerate(gen_request("lead/", params)):
         transform_lead(row, custom_schema)
@@ -189,18 +197,42 @@ def sync_leads():
                            for contact in row['contacts']]
         if row['date_updated'] >= start:
             singer.write_record("leads", row)
-            utils.update_state(STATE, "leads", dateutil.parser.parse(row['date_updated']))
+            last_updated = max(dateutil.parser.parse(row['date_updated']), last_updated)
 
-        if i % PER_PAGE == 0:
-            singer.write_state(STATE)
-
+    utils.update_state(STATE, "leads", last_updated)
     singer.write_state(STATE)
+
+
+Stream = collections.namedtuple('Stream', ['name', 'sync'])
+STREAMS = [
+    Stream('activities', sync_activities),
+    Stream('leads', sync_leads),
+]
 
 
 def do_sync():
     LOGGER.info("Starting sync")
-    sync_activities()
-    sync_leads()
+
+    for name, sync in STREAMS.items():
+        # If active_stream is missing, we'll sync
+        # If active_stream matches, we'll sync
+        # if active_stream doesn't match, we'll skip
+        if STATE.get('active_stream', name) != name:
+            LOGGER.info("Skipping {}".format(name))
+            continue
+
+        LOGGER.info("Syncing {}".format(name))
+
+        # Set the active_stream to the current stream before starting sync
+        STATE['active_stream'] = name
+        singer.write_state(STATE)
+
+        sync()
+
+        # Remove the active_stream after finishing sync
+        STATE.pop('active_stream', None)
+        singer.write_state(STATE)
+
     LOGGER.info("Completed sync")
 
 
