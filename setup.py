@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='tap-closeio',
-      version='0.6.7',
+      version='0.6.8',
       description='Singer.io tap for extracting data from the CloseIO API',
       author='Stitch',
       url='http://singer.io',
