@@ -128,17 +128,21 @@ def sync_activities():
     schema = load_schema("activities")
     singer.write_schema("activities", schema, ["id"])
 
-    start = get_start("activities")
-    params = {"date_created__gt": start}
+    start = pendulum.parse(get_start("activities"))
+    now = pendulum.now()
 
-    for row in gen_request("activity/", params):
-        transform_activity(row)
-        if row['date_created'] >= start:
+    while start <= now:
+        end = start.add(days=1)
+        params = {"date_created__gte": start, "date_created__lt": end}
+
+        for row in gen_request("activity/", params):
+            transform_activity(row)
+
             singer.write_record("activities", row)
             utils.update_state(STATE, "activities", dateutil.parser.parse(row['date_created']))
 
-    singer.write_state(STATE)
-
+        start = start.add(days=1)
+        singer.write_state(STATE)
 
 def to_json_type(typ):
     if typ in ["datetime", "date"]:
