@@ -151,7 +151,21 @@ def to_json_type(typ):
     if typ == "number":
         return {"type": ["null", "number"]}
 
-    return {"type": ["null", "string"]}
+    # According to the closeio docs on choices:
+    # "Choices: a dropdown of predefined choices. Admins can set up all the possible
+    # choices this field can contain ahead of time."
+    # closeio docs on user:
+    # "User: a dropdown containing all the users who are active in your organization."
+    if typ in ["text", "choices", "user"]:
+        return {"type": ["null", "string"]}
+
+    # According to the closeio docs on hidden:
+    # "Hidden: a field that's never displayed in the UI, but can be useful for API integrations.
+    # Accepts any data type from JSON, including lists and objects."
+    if typ == 'hidden':
+        return {}
+
+    raise ValueError('Unexpected custom field type: {}'.format(typ))
 
 
 def get_custom_leads_schema():
