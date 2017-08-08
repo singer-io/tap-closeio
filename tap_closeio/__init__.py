@@ -149,7 +149,7 @@ def to_json_type(typ):
         return {"type": ["null", "string"], "format": "date-time"}
 
     if typ == "number":
-        return {"type": ["null", "number"]}
+        return {"type": ["null", "number", "boolean"]}
 
     # According to the closeio docs on choices:
     # "Choices: a dropdown of predefined choices. Admins can set up all the possible
@@ -157,7 +157,7 @@ def to_json_type(typ):
     # closeio docs on user:
     # "User: a dropdown containing all the users who are active in your organization."
     if typ in ["text", "choices", "user"]:
-        return {"type": ["null", "string"]}
+        return {"type": ["null", "string", "boolean"]}
 
     # According to the closeio docs on hidden:
     # "Hidden: a field that's never displayed in the UI, but can be useful for API integrations.
