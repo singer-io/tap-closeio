@@ -217,7 +217,7 @@ def sync_leads():
 
 def do_sync():
     LOGGER.info("Starting sync")
-    # sync_activities()
+    sync_activities()
     sync_leads()
     LOGGER.info("Completed sync")
 
