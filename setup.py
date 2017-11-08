@@ -10,9 +10,8 @@ setup(name='tap-closeio',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_closeio'],
       install_requires=[
-          'singer-python==1.6.0',
+          'singer-python==4.0.2',
           'requests==2.12.4',
-          'backoff==1.3.2'
       ],
       entry_points='''
           [console_scripts]
@@ -20,10 +19,7 @@ setup(name='tap-closeio',
       ''',
       packages=['tap_closeio'],
       package_data = {
-          'tap_closeio/schemas': [
-              'leads.json',
-              'activities.json'
-          ]
+          'schemas': ['tap_closeio/schemas/*.json']
       },
       include_package_data=True,
 )
