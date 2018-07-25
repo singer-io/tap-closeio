@@ -22,6 +22,7 @@ def has_access_to_event_log(ctx):
 
 
 def discover(ctx):
+    LOGGER.info("Running discover")
     use_event_log = has_access_to_event_log(ctx)
     catalog = Catalog([])
     for tap_stream_id in streams_.stream_ids:
@@ -39,6 +40,7 @@ def discover(ctx):
 
 
 def sync(ctx):
+    LOGGER.info("Running sync")
     currently_syncing = ctx.state.get("currently_syncing")
     start_idx = streams_.stream_ids.index(currently_syncing) \
         if currently_syncing else 0
@@ -60,8 +62,8 @@ def main_impl():
         discover(ctx).dump()
         print()
     else:
-        ctx.catalog = Catalog.from_dict(args.properties) \
-            if args.properties else discover(ctx)
+        ctx.catalog = args.catalog \
+            if args.catalog else discover(ctx)
         sync(ctx)
 
 

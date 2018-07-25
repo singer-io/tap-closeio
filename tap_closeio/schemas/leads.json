@@ -18,7 +18,7 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "integration_links": {
@@ -211,7 +211,7 @@
             "format": "date-time"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "organization_id": {
@@ -389,7 +389,7 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "status_label": {
@@ -437,8 +437,14 @@
                   "type": "string"
                 }
               },
-              "additionalProperties": false
+              "additionalProperties": true
             }
+          },
+          "display_name": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "title": {
             "type": [
@@ -491,7 +497,7 @@
                   ]
                 }
               },
-              "additionalProperties": false
+              "additionalProperties": true
             }
           },
           "lead_id": {
@@ -549,7 +555,7 @@
                   ]
                 }
               },
-              "additionalProperties": false
+              "additionalProperties": true
             }
           },
           "date_created": {
@@ -560,7 +566,7 @@
             "format": "date-time"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "updated_by_name": {
@@ -641,7 +647,7 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "name": {
@@ -657,7 +663,7 @@
       ]
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "tap_schema_dependencies": [
     "integration_links"
   ]

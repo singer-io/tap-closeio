@@ -47,13 +47,14 @@
       "items": {
         "type": [
           "null",
-          "object"
+          "object",
+          "string"
         ],
         "properties": {
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

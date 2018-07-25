@@ -31,7 +31,7 @@
                 ]
               }
             },
-            "additionalProperties": false
+            "additionalProperties": true
           }
         },
         "message_id": {
@@ -64,7 +64,7 @@
                 ]
               }
             },
-            "additionalProperties": false
+            "additionalProperties": true
           }
         },
         "date": {
@@ -111,7 +111,7 @@
                 ]
               }
             },
-            "additionalProperties": false
+            "additionalProperties": true
           }
         },
         "bcc": {
@@ -138,7 +138,7 @@
                 ]
               }
             },
-            "additionalProperties": false
+            "additionalProperties": true
           }
         },
         "reply_to": {
@@ -165,7 +165,7 @@
                 ]
               }
             },
-            "additionalProperties": false
+            "additionalProperties": true
           }
         },
         "to": {
@@ -192,7 +192,7 @@
                 ]
               }
             },
-            "additionalProperties": false
+            "additionalProperties": true
           }
         },
         "in_reply_to": {
@@ -202,7 +202,7 @@
           ]
         }
       },
-      "additionalProperties": false
+      "additionalProperties": true
     },
     "date_created": {
       "type": [
@@ -248,7 +248,7 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "need_smtp_credentials": {
@@ -390,7 +390,7 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "message_ids": {
@@ -442,7 +442,7 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "opens": {
@@ -481,7 +481,7 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "task_id": {
@@ -776,7 +776,7 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "id": {
@@ -807,7 +807,7 @@
       }
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
   "tap_schema_dependencies": [
     "users"
   ]
