@@ -1,31 +1,28 @@
 {
   "type": "object",
   "properties": {
-    "integration_links": {
-      "type": [
-        "null",
-        "array"
-      ],
+    "custom_fields": {
+      "type": "array",
       "items": {
-        "type": [
-          "null",
-          "object"
-        ],
+        "type": "object",
         "properties": {
-          "name": {
-            "type": [
-              "null",
-              "string"
-            ]
+          "id": {
+            "type": "string"
           },
-          "url": {
+          "value": {
             "type": [
               "null",
-              "string"
+              "string",
+              "number",
+              "boolean"
             ]
           }
-        }
+        },
+        "additionalProperties": true
       }
+    },
+    "integration_links": {
+      "$ref": "integration_links"
     },
     "description": {
       "type": [
@@ -56,6 +53,9 @@
           "object"
         ],
         "properties": {
+          "integration_links": {
+            "$ref": "integration_links"
+          },
           "value": {
             "type": [
               "null",
@@ -210,7 +210,8 @@
             ],
             "format": "date-time"
           }
-        }
+        },
+        "additionalProperties": true
       }
     },
     "organization_id": {
@@ -332,7 +333,8 @@
           },
           "contact_name": {
             "type": [
-              "null"
+              "null",
+              "string"
             ]
           },
           "assigned_to": {
@@ -375,7 +377,8 @@
           },
           "contact_id": {
             "type": [
-              "null"
+              "null",
+              "string"
             ]
           },
           "is_complete": {
@@ -385,7 +388,8 @@
               "boolean"
             ]
           }
-        }
+        },
+        "additionalProperties": true
       }
     },
     "status_label": {
@@ -418,6 +422,30 @@
           "object"
         ],
         "properties": {
+          "urls": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "display_name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "title": {
             "type": [
               "null",
@@ -425,30 +453,7 @@
             ]
           },
           "integration_links": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": [
-                "null",
-                "object"
-              ],
-              "properties": {
-                "name": {
-                  "type": [
-                    "null",
-                    "string"
-                  ]
-                },
-                "url": {
-                  "type": [
-                    "null",
-                    "string"
-                  ]
-                }
-              }
-            }
+            "$ref": "integration_links"
           },
           "id": {
             "type": [
@@ -491,7 +496,8 @@
                     "string"
                   ]
                 }
-              }
+              },
+              "additionalProperties": true
             }
           },
           "lead_id": {
@@ -548,7 +554,8 @@
                     "string"
                   ]
                 }
-              }
+              },
+              "additionalProperties": true
             }
           },
           "date_created": {
@@ -558,7 +565,8 @@
             ],
             "format": "date-time"
           }
-        }
+        },
+        "additionalProperties": true
       }
     },
     "updated_by_name": {
@@ -638,7 +646,8 @@
               "string"
             ]
           }
-        }
+        },
+        "additionalProperties": true
       }
     },
     "name": {
@@ -653,5 +662,9 @@
         "string"
       ]
     }
-  }
+  },
+  "additionalProperties": true,
+  "tap_schema_dependencies": [
+    "integration_links"
+  ]
 }

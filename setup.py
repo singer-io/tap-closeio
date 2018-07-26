@@ -3,16 +3,15 @@
 from setuptools import setup, find_packages
 
 setup(name='tap-closeio',
-      version='0.6.12',
+      version='1.0.0',
       description='Singer.io tap for extracting data from the CloseIO API',
       author='Stitch',
       url='http://singer.io',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_closeio'],
       install_requires=[
-          'singer-python==1.6.0',
+          'singer-python==4.0.2',
           'requests==2.12.4',
-          'backoff==1.3.2'
       ],
       entry_points='''
           [console_scripts]
@@ -20,10 +19,7 @@ setup(name='tap-closeio',
       ''',
       packages=['tap_closeio'],
       package_data = {
-          'tap_closeio/schemas': [
-              'leads.json',
-              'activities.json'
-          ]
+          'schemas': ['tap_closeio/schemas/*.json']
       },
       include_package_data=True,
 )
