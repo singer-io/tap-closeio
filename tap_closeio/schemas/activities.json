@@ -68,11 +68,15 @@
           }
         },
         "date": {
-          "type": [
-            "null",
-            "string"
-          ],
-          "format": "date-time"
+          "anyOf": [
+            {
+              "type": ["null", "string"],
+              "format": "date-time"
+            },
+            {
+              "type": ["null", "string"]
+            }
+          ]
         },
         "subject": {
           "type": [

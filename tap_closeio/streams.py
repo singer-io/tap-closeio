@@ -48,8 +48,13 @@ def new_max_bookmark(max_bookmark, records, key):
 
 
 def format_dts(tap_stream_id, ctx, records):
+    schema = [
+        stream for stream
+        in ctx.catalog.streams
+        if stream.tap_stream_id == 'activities'
+    ][0].schema
     paths = ctx.schema_dt_paths[tap_stream_id]
-    return transform_dts(records, paths)
+    return transform_dts(records, paths, schema)
 
 
 def metrics(tap_stream_id, page):

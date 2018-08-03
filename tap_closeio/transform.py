@@ -1,5 +1,8 @@
 import pendulum
+import singer
 from singer.utils import strftime
+
+LOGGER = singer.get_logger()
 
 
 class _PathItem(object):
@@ -51,6 +54,13 @@ def find_dt_paths(schema, path=None):
     This means that all items inside the list are date-times."""
     path = path or []
     found = []
+    if schema.anyOf:
+        if len([type
+                for type
+                in schema.anyOf
+                if type.get('format')
+                and type['format'] == 'date-time']):
+            found.append(path)
     if schema.format == "date-time":
         found.append(path)
     elif schema.properties:
@@ -74,28 +84,67 @@ def _check_type(item, path, path_idx):
         raise TransformationException(item, path, path_idx)
 
 
-def _transform_impl(item, path, path_idx=0):
+def _is_any_of_path(path, schema):
+    if len(path) == 1:
+        try:
+            return schema[path[0].key].anyOf
+        except:
+            try:
+                return schema.properties[path[0].key].anyOf
+            except:
+                LOGGER.error("Failed to detect anyOf path")
+                raise
+    elif isinstance(path[0], _ListItems):
+        if schema.properties:
+            return _is_any_of_path(path[1:], schema.properties)
+        else:
+            return _is_any_of_path(path[1:], schema.items)
+    elif isinstance(path[0], DictKey):
+        return _is_any_of_path(path[1:], schema[path[0].key])
+
+def _transform_impl(item, path, schema, path_idx=0):
     if not item:
         return item
     if path_idx == len(path):
-        dt = pendulum.parse(item).in_timezone("UTC")
-        return strftime(dt)
+        if _is_any_of_path(path, schema):
+            LOGGER.debug("Found anyOf path `{}`".format(path))
+            try:
+                dt = pendulum.parse(item).in_timezone("UTC")
+                LOGGER.debug(
+                    "Successfully parsed anyOf path `{}`".format(
+                        path))
+                return strftime(dt)
+            except:
+                LOGGER.debug(
+                    "Failed to parse anyOf path `{}`. Returning as string.".format(
+                        path))
+                LOGGER.debug("value `{}`".format(item))
+                return item
+        else:
+            try:
+                dt = pendulum.parse(item).in_timezone("UTC")
+            except:
+                LOGGER.error(
+                    "Failed to parse non anyOf path `{}`".format(path))
+                LOGGER.debug("value `{}`".format(item))
+                raise
+            return strftime(dt)
     _check_type(item, path, path_idx)
     path_item = path[path_idx]
     for k, v in path_item.iterate(item):
         if not v:
             continue
-        item[k] = _transform_impl(v, path, path_idx + 1)
+        item[k] = _transform_impl(v, path, schema, path_idx + 1)
     return item
 
 
-def transform_dts(records, paths):
+def transform_dts(records, paths, schema):
     """Accepts a list of records and a list of paths and re-formats all
     date-times to RFC3339.
 
     `paths` is a list as output by the `find_dt_paths` function."""
     for path in paths:
-        _transform_impl(records, [ListItems] + path)
+        _transform_impl(records, [ListItems] + path, schema)
     return records
 
 

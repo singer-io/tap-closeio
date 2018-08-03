@@ -28,7 +28,8 @@ def discover(ctx):
     for tap_stream_id in streams_.stream_ids:
         if not use_event_log and tap_stream_id == schemas.IDS.EVENT_LOG:
             continue
-        schema = Schema.from_dict(schemas.load_schema(ctx, tap_stream_id),
+        raw_schema = schemas.load_schema(ctx, tap_stream_id)
+        schema = Schema.from_dict(raw_schema,
                                   inclusion="automatic")
         catalog.streams.append(CatalogEntry(
             stream=tap_stream_id,
