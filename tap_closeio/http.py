@@ -2,7 +2,7 @@ import time
 from collections import namedtuple
 import requests
 from requests.auth import HTTPBasicAuth
-from singer import metrics
+from singer import metrics, utils
 
 BASE_URL = "https://app.close.io/api/v1"
 PER_PAGE = 100
@@ -36,10 +36,16 @@ class Client(object):
         request.auth = self.auth
         return self.session.send(request.prepare())
 
+    @utils.backoff((requests.exceptions.RequestException), utils.exception_is_4xx)
     def request_with_handling(self, tap_stream_id, request):
         with metrics.http_request_timer(tap_stream_id) as timer:
             resp = self.prepare_and_send(request)
             timer.tags[metrics.Tag.http_status_code] = resp.status_code
+        # We're only interested in triggering the custom backoff code if
+        # it's a 429. Everything else should die immediately or be retried
+        # by the utility code.
+        if resp.status_code != 429:
+            resp.raise_for_status()
         json = resp.json()
         # if we're hitting the rate limit cap, sleep until the limit resets
         if resp.headers.get('X-Rate-Limit-Remaining') == "0":
