@@ -4,6 +4,8 @@ import os
 import time
 import re
 import sys
+import json
+import argparse
 
 import backoff
 import pendulum
@@ -223,9 +225,74 @@ def do_sync():
     LOGGER.info("Completed sync")
 
 
+# Copied from singer-python to extend for catalog
+def parse_args(required_config_keys):
+    '''Parse standard command-line args.
+
+    Parses the command-line arguments mentioned in the SPEC and the
+    BEST_PRACTICES documents:
+
+    -c,--config     Config file
+    -s,--state      State file
+    -d,--discover   Run in discover mode
+    -p,--properties Properties file
+
+    Returns the parsed args object from argparse. For each argument that
+    point to JSON files (config, state, properties), we will automatically
+    load and parse the JSON file.
+    '''
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '-c', '--config',
+        help='Config file',
+        required=True)
+
+    parser.add_argument(
+        '--catalog',
+        help='catalog')
+
+    parser.add_argument(
+        '-s', '--state',
+        help='State file')
+
+    parser.add_argument(
+        '-p', '--properties',
+        help='Property selections')
+
+    parser.add_argument(
+        '-d', '--discover',
+        action='store_true',
+        help='Do schema discovery')
+
+    args = parser.parse_args()
+    if args.config:
+        args.config = utils.load_json(args.config)
+    if args.state:
+        args.state = utils.load_json(args.state)
+    else:
+        args.state = {}
+    if args.properties:
+        args.properties = utils.load_json(args.properties)
+
+    check_config(args.config, required_config_keys)
+
+    return args
+
+
+# Copied from singer-python to extend for catalog
+def check_config(config, required_keys):
+    missing_keys = [key for key in required_keys if key not in config]
+    if missing_keys:
+        raise Exception("Config is missing required keys: {}".format(missing_keys))
+
+
 def main_impl():
-    args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+    args = parse_args(REQUIRED_CONFIG_KEYS)
     if args.discover:
+        json.dump({"streams": [{"tap_stream_id": "automatic_closeio_replication",
+                                "stream": "automatic_closeio_replication"}]},
+                  sys.stdout, indent=2)
         sys.exit(0)
     CONFIG.update(args.config)
     STATE.update(args.state)
