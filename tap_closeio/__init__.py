@@ -3,6 +3,7 @@
 import os
 import time
 import re
+import sys
 
 import backoff
 import pendulum
@@ -224,6 +225,8 @@ def do_sync():
 
 def main_impl():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+    if args.discover:
+        sys.exit(0)
     CONFIG.update(args.config)
     STATE.update(args.state)
     do_sync()
