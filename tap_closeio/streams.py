@@ -51,7 +51,7 @@ def format_dts(tap_stream_id, ctx, records):
     schema = [
         stream for stream
         in ctx.catalog.streams
-        if stream.tap_stream_id == 'activities'
+        if stream.tap_stream_id == tap_stream_id
     ][0].schema
     paths = ctx.schema_dt_paths[tap_stream_id]
     return transform_dts(records, paths, schema)
