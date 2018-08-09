@@ -144,8 +144,12 @@ def sync_event_log(ctx):
             break
         events = format_dts(IDS.EVENT_LOG, ctx, response["data"])
         for event in events:
-            event["data"] = json.dumps(event["data"])
-            event["previous_data"] = json.dumps(event["previous_data"])
+            # According to the API docs 'data' and 'previous_data' are
+            # only available to 'organization admins' so this needs to be
+            # conditional. https://developer.close.io/#event-log
+            if 'data' in event:
+                event["data"] = json.dumps(event["data"])
+                event["previous_data"] = json.dumps(event["previous_data"])
         write_records(IDS.EVENT_LOG, events)
         max_bookmark = new_max_bookmark(max_bookmark, events, "date_updated")
         cursor_next = response["cursor_next"]
