@@ -118,7 +118,11 @@ def sync_leads(ctx):
 def sync_activities(ctx):
     start_date_str = ctx.update_start_date_bookmark(bookmark(IDS.ACTIVITIES))
     start_date = pendulum.parse(start_date_str)
-    offset_secs = ctx.config.get("activities_window_seconds", 0)
+    # 24 hours of activities essentially allows us to capture updates to
+    # calls that are in progress _while_ an extraction is happening, no
+    # matter the replication frequency or call duration.
+    offset_secs = ctx.config.get("activities_window_seconds", (60 * 60 * 24))
+    LOGGER.info("Using offset seconds {}".format(offset_secs))
     start_date -= timedelta(seconds=offset_secs)
     # date_created__gt has precision to the second
     formatted_start = start_date.strftime("%Y-%m-%dT%H:%M:%S")
