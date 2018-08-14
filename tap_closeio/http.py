@@ -45,6 +45,12 @@ class Client(object):
         # it's a 429. Everything else should die immediately or be retried
         # by the utility code.
         if resp.status_code != 429:
+            if resp.status_code == 400:
+                try:
+                    message="400 Response: {}".format(resp.json()['error'])
+                except:
+                    message="400 Response. Unable to determine cause."
+                raise Exception(message)
             resp.raise_for_status()
         json = resp.json()
         # if we're hitting the rate limit cap, sleep until the limit resets

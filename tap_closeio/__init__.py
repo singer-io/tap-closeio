@@ -72,7 +72,8 @@ def main():
     try:
         main_impl()
     except Exception as exc:
-        LOGGER.critical(exc)
+        for line in str(exc).splitlines():
+            LOGGER.critical(line)
         raise
 
 if __name__ == "__main__":
