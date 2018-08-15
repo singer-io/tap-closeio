@@ -67,19 +67,45 @@ def write_records(tap_stream_id, page):
     metrics(tap_stream_id, page)
 
 
+def create_leads_request(ctx):
+    start_date = ctx.update_start_date_bookmark(bookmark(IDS.LEADS))
+    # date_updated>= has precision to the minute
+    formatted_start = pendulum.parse(start_date).strftime("%Y-%m-%dT%H:%M")
+    query = 'date_updated>="{}" sort:date_updated'.format(formatted_start)
+    return create_request(IDS.LEADS, params={"query": query})
+
+
 def paginated_sync(tap_stream_id, ctx, request, start_date):
+    _request = request
     bookmark_key = BOOK_KEYS[tap_stream_id]
     offset = [tap_stream_id, "skip"]
     skip = ctx.get_offset(offset) or 0
     max_bookmark = start_date
     formatter = FORMATTERS.get(tap_stream_id, (lambda x: x))
-    for page in paginate(ctx.client, tap_stream_id, request, skip=skip):
-        records = formatter(format_dts(tap_stream_id, ctx, page.records))
-        to_write = [rec for rec in records if rec[bookmark_key] >= start_date]
-        max_bookmark = new_max_bookmark(max_bookmark, records, bookmark_key)
-        write_records(tap_stream_id, to_write)
-        ctx.set_offset(offset, page.next_skip)
-        ctx.write_state()
+    while True:
+        try:
+            for page in paginate(ctx.client, tap_stream_id, _request, skip=skip):
+                records = formatter(format_dts(tap_stream_id, ctx, page.records))
+                to_write = [rec for rec in records if rec[bookmark_key] >= start_date]
+                max_bookmark = new_max_bookmark(max_bookmark, records, bookmark_key)
+                write_records(tap_stream_id, to_write)
+                ctx.set_offset(offset, page.next_skip)
+                ctx.write_state()
+            break
+        except Exception as e:
+            # There may be streams other than `leads` that will run into
+            # `max_skip` errors but YAGNI. We can make the tap more
+            # complicated once we have an extant need for it.
+            if 'max_skip = ' in str(e) and tap_stream_id == IDS.LEADS:
+                LOGGER.info("Hit max_skip error. Setting bookmark to `{}` and restarting pagination.".format(
+                    max_bookmark))
+                skip = 0
+                ctx.clear_offsets(tap_stream_id)
+                ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)
+                _request = create_leads_request(ctx)
+                ctx.write_state()
+            else:
+                raise
     ctx.clear_offsets(tap_stream_id)
     ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)
     ctx.write_state()
@@ -107,11 +133,8 @@ def basic_paginator(tap_stream_id, ctx):
 
 
 def sync_leads(ctx):
+    request = create_leads_request(ctx)
     start_date = ctx.update_start_date_bookmark(bookmark(IDS.LEADS))
-    # date_updated>= has precision to the minute
-    formatted_start = pendulum.parse(start_date).strftime("%Y-%m-%dT%H:%M")
-    query = 'date_updated>="{}" sort:date_updated'.format(formatted_start)
-    request = create_request(IDS.LEADS, params={"query": query})
     paginated_sync(IDS.LEADS, ctx, request, start_date)
 
 

@@ -3,9 +3,11 @@ from collections import namedtuple
 import requests
 from requests.auth import HTTPBasicAuth
 from singer import metrics, utils
+import singer
 
 BASE_URL = "https://app.close.io/api/v1"
 PER_PAGE = 100
+LOGGER = singer.get_logger()
 
 
 class RateLimitException(Exception):
@@ -74,6 +76,9 @@ def paginate(client, tap_stream_id, request, *, skip=0):
         request.params["_skip"] = skip
         response = client.request_with_handling(tap_stream_id, request)
         next_skip = skip + len(response["data"])
+        if 'total_results' in response:
+            LOGGER.info("Retrieved page from offset `{}` of total_results `{}`.".format(
+                skip, response['total_results']))
         yield Page(response["data"], skip, next_skip)
         if not response.get("has_more"):
             break
