@@ -14,7 +14,9 @@
               "null",
               "string",
               "number",
-              "boolean"
+              "boolean",
+              "object",
+              "array"
             ]
           }
         },
