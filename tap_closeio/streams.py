@@ -1,3 +1,4 @@
+import requests
 import json
 from datetime import datetime, timedelta, timezone
 from collections import namedtuple
@@ -90,8 +91,26 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
                 max_bookmark = new_max_bookmark(max_bookmark, records, bookmark_key)
                 write_records(tap_stream_id, to_write)
                 ctx.set_offset(offset, page.next_skip)
+                LOGGER.info("Current Bookmark and Offset: `{}`, `{}`".format(
+                    ctx.get_bookmark(bookmark(tap_stream_id)),
+                    page.next_skip))
+                LOGGER.info("Current Max Bookmark: `{}`".format(
+                    max_bookmark))
                 ctx.write_state()
             break
+        except requests.Timeout as e:
+            LOGGER.info("Request timed out after 5 seconds: stream={}, skip={}".format(
+                tap_stream_id, ctx.get_offset(offset)))
+            LOGGER.info("Setting bookmark to `{}` and restarting pagination.".format(
+                max_bookmark))
+            skip = 0
+            ctx.clear_offsets(tap_stream_id)
+            ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)
+            if IDS.LEADS != tap_stream_id:
+                _request = create_request(tap_stream_id)
+            else:
+                _request = create_leads_request(ctx)
+            ctx.write_state()
         except Exception as e:
             # There may be streams other than `leads` that will run into
             # `max_skip` errors but YAGNI. We can make the tap more
