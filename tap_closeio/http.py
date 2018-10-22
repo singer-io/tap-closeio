@@ -57,7 +57,12 @@ class Client(object):
         json = resp.json()
         # if we're hitting the rate limit cap, sleep until the limit resets
         if resp.headers.get('X-Rate-Limit-Remaining') == "0":
-            time.sleep(int(resp.headers['X-Rate-Limit-Reset']))
+            # close.io can return a fraction of a second sleep time which will
+            # both fail to parse and sleep for 0 seconds. So we will sleep for
+            # at least 1 second here after parsing the limit reset value
+            limit_reset_time = int(float(resp.headers['X-Rate-Limit-Reset'])) or 1
+            time.sleep(limit_reset_time)
+
         # if we're already over the limit, we'll get a 429
         # sleep for the rate_reset seconds and then retry
         if resp.status_code == 429:
