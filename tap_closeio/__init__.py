@@ -2,7 +2,7 @@
 import os
 import json
 import singer
-from singer import utils
+from singer import utils, metadata
 from singer.catalog import Catalog, CatalogEntry, Schema
 from . import streams as streams_
 from .context import Context
@@ -28,14 +28,21 @@ def discover(ctx):
     for tap_stream_id in streams_.stream_ids:
         if not use_event_log and tap_stream_id == schemas.IDS.EVENT_LOG:
             continue
-        raw_schema = schemas.load_schema(ctx, tap_stream_id)
-        schema = Schema.from_dict(raw_schema,
-                                  inclusion="automatic")
+        schema_dict = schemas.load_schema(ctx, tap_stream_id)
+        schema = Schema.from_dict(schema_dict)
+        mdata = metadata.get_standard_metadata(schema_dict,
+                                               key_properties=schemas.PK_FIELDS[tap_stream_id])
+        mdata = metadata.to_map(mdata)
+
+        for field_name in schema_dict['properties'].keys():
+            mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
+
         catalog.streams.append(CatalogEntry(
             stream=tap_stream_id,
             tap_stream_id=tap_stream_id,
             key_properties=schemas.PK_FIELDS[tap_stream_id],
             schema=schema,
+            metadata=metadata.to_list(mdata)
         ))
     return catalog
 
