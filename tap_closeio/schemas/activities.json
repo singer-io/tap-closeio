@@ -807,7 +807,10 @@
         "array"
       ],
       "items": {
-        "$ref": "users"
+        "type": [
+          "null",
+          "string"
+        ]
       }
     }
   },

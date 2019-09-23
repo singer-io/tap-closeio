@@ -4,7 +4,7 @@ import singer
 from singer import utils
 
 
-class IDS(object):
+class IDS():
     CUSTOM_FIELDS = "custom_fields"
     LEADS = "leads"
     ACTIVITIES = "activities"

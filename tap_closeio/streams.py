@@ -1,8 +1,8 @@
-import requests
-import json
-from datetime import datetime, timedelta, timezone
 from collections import namedtuple
+from datetime import datetime, timedelta, timezone
 from functools import partial
+import json
+import requests
 import pendulum
 import singer
 from singer.utils import strftime
@@ -116,8 +116,9 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
             # `max_skip` errors but YAGNI. We can make the tap more
             # complicated once we have an extant need for it.
             if 'max_skip = ' in str(e) and tap_stream_id == IDS.LEADS:
-                LOGGER.info("Hit max_skip error. Setting bookmark to `{}` and restarting pagination.".format(
-                    max_bookmark))
+                LOGGER.info(("Hit max_skip error. "
+                             "Setting bookmark to `{}` and restarting pagination.".format(
+                                 max_bookmark)))
                 skip = 0
                 ctx.clear_offsets(tap_stream_id)
                 ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)

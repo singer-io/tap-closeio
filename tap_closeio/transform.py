@@ -5,7 +5,7 @@ from singer.utils import strftime
 LOGGER = singer.get_logger()
 
 
-class _PathItem(object):
+class _PathItem():
     def iterate(self, item):
         raise NotImplementedError()
 
@@ -97,8 +97,7 @@ def _is_any_of_path(path, schema):
     elif isinstance(path[0], _ListItems):
         if schema.properties:
             return _is_any_of_path(path[1:], schema.properties)
-        else:
-            return _is_any_of_path(path[1:], schema.items)
+        return _is_any_of_path(path[1:], schema.items)
     elif isinstance(path[0], DictKey):
         return _is_any_of_path(path[1:], schema[path[0].key])
 
