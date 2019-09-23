@@ -26,7 +26,7 @@ def create_get_request(path, **kwargs):
     return requests.Request(method="GET", url=url(path), **kwargs)
 
 
-class Client(object):
+class Client():
     def __init__(self, config):
         self.user_agent = config.get("user_agent")
         self.session = requests.Session()
@@ -51,9 +51,9 @@ class Client(object):
         if resp.status_code != 429:
             if resp.status_code == 400:
                 try:
-                    message="400 Response: {}".format(resp.json()['error'])
+                    message = "400 Response: {}".format(resp.json()['error'])
                 except:
-                    message="400 Response. Unable to determine cause."
+                    message = "400 Response. Unable to determine cause."
                 raise Exception(message)
             resp.raise_for_status()
         json = resp.json()

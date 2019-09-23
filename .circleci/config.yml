@@ -13,4 +13,4 @@ jobs:
           pip install pylint
       - run: |
           . venv/bin/activate
-          pylint tap_closeio --disable missing-docstring,logging-format-interpolation,too-many-locals,too-many-arguments
+          pylint tap_closeio --disable missing-docstring,logging-format-interpolation,too-many-locals,too-many-arguments,too-few-public-methods,invalid-name,len-as-ition,bare-except,inconsistent-return-statements,broad-except
