@@ -36,9 +36,9 @@ class Client():
         if self.user_agent:
             request.headers["User-Agent"] = self.user_agent
         request.auth = self.auth
-        # This timeout was increased from 5 to 10 after receiving errors
+        # This timeout was increased from 10 to 30 after receiving errors
         # that were being retried erroneously: requests.exceptions.ReadTimeout
-        return self.session.send(request.prepare(), timeout=10.0)
+        return self.session.send(request.prepare(), timeout=30.0)
 
     @utils.backoff((requests.exceptions.RequestException), utils.exception_is_4xx)
     def request_with_handling(self, tap_stream_id, request):
