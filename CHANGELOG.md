@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6.2
+  * Increases the timeout on HTTP requests for data [#21](https://github.com/singer-io/tap-closeio/pull/21)
+
 ## 1.6.1
   * Change the schema of the `activities` stream because only `activities`
     of `_type` "Meeting" returns anything the `users` field. And when it
