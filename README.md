@@ -42,7 +42,7 @@ This tap:
 4. Run the tap in discovery mode
 
     ```bash
-    tap-closeio --config config.json --discover
+    tap-closeio --config config.json --discover > catalog.json
     ```
 
    See the Singer docs on discovery mode
