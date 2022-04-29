@@ -171,9 +171,11 @@ def sync_activities(ctx):
         date_window = int(ctx.config.get("date_window", 15))
         # if date_window is 0, '0' or None, then set default window size of 15 days
         if not date_window:
+            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
             date_window = 15
     except ValueError:
-        # In case of empty string, '' we get use default window
+        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
+        # In case of empty string(''), use default window
         date_window = 15
 
     LOGGER.info("Using offset seconds {}".format(offset_secs))
