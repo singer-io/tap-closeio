@@ -31,13 +31,16 @@ This tap:
     ```json
     {
         "start_date": "2010-01-01",
-        "api_key": "your-api-token"
+        "api_key": "your-api-token",
+        "activities_date_window": 10
     }
     ```
 
     The `start_date` is the date at which the tap will begin syncing data. Ie.
     if there is data in your Close.io account older than `start_date`, it will
     not be synced.
+
+    The `activities_date_window` is the window in the which API calls will take place. The default window size is 15 days.
 
 4. Run the tap in discovery mode
 

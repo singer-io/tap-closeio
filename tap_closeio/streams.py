@@ -170,7 +170,8 @@ def sync_activities(ctx):
     start_date -= timedelta(seconds=offset_secs)
 
     window_start_date = start_date._datetime
-    while window_start_date <= datetime.utcnow().replace(tzinfo=timezone.utc):
+    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    while window_start_date <= now:
         window_end_date = window_start_date + timedelta(days=date_window)
 
         # 'date_created__gt' and  'date_created__lt' has precision to the second
