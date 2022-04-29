@@ -6,12 +6,27 @@ jobs:
       - image: circleci/python:3.5.6-jessie
     steps:
       - checkout
-      - run: |
-          python3 -m venv venv
-          . venv/bin/activate
-          pip install -U pip setuptools
-          pip install pylint
-          pip install .[dev]
-      - run: |
-          . venv/bin/activate
-          pylint tap_closeio --disable missing-docstring,logging-format-interpolation,too-many-locals,too-many-arguments,too-few-public-methods,invalid-name,len-as-condition,bare-except,inconsistent-return-statements,broad-except
+      - run:
+          name: 'Setup virtual env'
+          command: |
+            python3 -mvenv /usr/local/share/virtualenvs/tap-closeio
+            source /usr/local/share/virtualenvs/tap-closeio/bin/activate
+            pip install -U pip setuptools
+            pip install pylint
+            pip install .[dev]
+      - run:
+          name: 'pylint'
+          command: |
+            source /usr/local/share/virtualenvs/tap-closeio/bin/activate
+            pylint tap_closeio --disable missing-docstring,logging-format-interpolation,too-many-locals,too-many-arguments,too-few-public-methods,invalid-name,len-as-condition,bare-except,inconsistent-return-statements,broad-except
+      - run:
+          name: 'Unit Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-closeio/bin/activate
+            pip install nose coverage
+            nosetests --with-coverage --cover-erase --cover-package=tap_closeio --cover-html-dir=htmlcov tests/unittests
+            coverage html
+      - store_test_results:
+          path: test_output/report.xml
+      - store_artifacts:
+          path: htmlcov
