@@ -9,7 +9,7 @@ class TestActivityStreamDateWindow(unittest.TestCase):
 
     def test_activity_stream_default_date_window(self, mocked_paginated_sync):
         """
-            Test case to verify we are calling Activity API in 15 days window (default) when no "activities_date_window" is passed in the config
+            Test case to verify we are calling Activity API in 15 days window (default) when no "date_window" is passed in the config
         """
         # now date
         now_date = datetime.now()
@@ -30,14 +30,14 @@ class TestActivityStreamDateWindow(unittest.TestCase):
 
     def test_activity_stream_empty_string_date_window(self, mocked_paginated_sync):
         """
-            Test case to verify we are calling Activity API in 15 days window (default) when empty string "activities_date_window" is passed in the config
+            Test case to verify we are calling Activity API in 15 days window (default) when empty string "date_window" is passed in the config
         """
         # now date
         now_date = datetime.now()
         config = {
             "start_date": (now_date - timedelta(days=40)).strftime("%Y-%m-%d"), # set date 40 days later than now
             "api_key": "test_API_key",
-            "activities_date_window": ""
+            "date_window": ""
         }
         state = {}
 
@@ -52,14 +52,14 @@ class TestActivityStreamDateWindow(unittest.TestCase):
 
     def test_activity_stream_0_date_window(self, mocked_paginated_sync):
         """
-            Test case to verify we are calling Activity API in 15 days window (default) when int 0 "activities_date_window" is passed in the config
+            Test case to verify we are calling Activity API in 15 days window (default) when int 0 "date_window" is passed in the config
         """
         # now date
         now_date = datetime.now()
         config = {
             "start_date": (now_date - timedelta(days=40)).strftime("%Y-%m-%d"), # set date 40 days later than now
             "api_key": "test_API_key",
-            "activities_date_window": 0
+            "date_window": 0
         }
         state = {}
 
@@ -74,14 +74,14 @@ class TestActivityStreamDateWindow(unittest.TestCase):
 
     def test_activity_stream_string_0_date_window(self, mocked_paginated_sync):
         """
-            Test case to verify we are calling Activity API in 15 days window (default) when string 0 "activities_date_window" is passed in the config
+            Test case to verify we are calling Activity API in 15 days window (default) when string 0 "date_window" is passed in the config
         """
         # now date
         now_date = datetime.now()
         config = {
             "start_date": (now_date - timedelta(days=40)).strftime("%Y-%m-%d"), # set date 40 days later than now
             "api_key": "test_API_key",
-            "activities_date_window": "0"
+            "date_window": "0"
         }
         state = {}
 
@@ -96,14 +96,14 @@ class TestActivityStreamDateWindow(unittest.TestCase):
 
     def test_activity_stream_configurable_date_window(self, mocked_paginated_sync):
         """
-            Test case to verify we are calling Activity API in the desired date window passed in "activities_date_window" config value
+            Test case to verify we are calling Activity API in the desired date window passed in "date_window" config value
         """
         # now date
         now_date = datetime.now()
         config = {
             "start_date": (now_date - timedelta(days=40)).strftime("%Y-%m-%d"), # set date 40 days later than now
             "api_key": "test_API_key",
-            "activities_date_window": 3
+            "date_window": 3
         }
         state = {}
 

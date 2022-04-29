@@ -168,7 +168,7 @@ def sync_activities(ctx):
 
     try:
         # get date window from config
-        date_window = int(ctx.config.get("activities_date_window", 15))
+        date_window = int(ctx.config.get("date_window", 15))
         # if date_window is 0, '0' or None, then set default window size of 15 days
         if not date_window:
             date_window = 15
