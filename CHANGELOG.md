@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.6.3
+  * Update pagination to respect max page limits [#27](https://github.com/singer-io/tap-closeio/pull/27)
 ## 1.6.2
   * Increases the timeout on HTTP requests for data [#21](https://github.com/singer-io/tap-closeio/pull/21)
 
