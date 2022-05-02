@@ -165,13 +165,38 @@ def sync_activities(ctx):
     # calls that are in progress _while_ an extraction is happening, no
     # matter the replication frequency or call duration.
     offset_secs = ctx.config.get("activities_window_seconds", (60 * 60 * 24))
+
+    try:
+        # get date window from config
+        date_window = int(ctx.config.get("date_window", 15))
+        # if date_window is 0, '0' or None, then set default window size of 15 days
+        if not date_window:
+            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
+            date_window = 15
+    except ValueError:
+        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
+        # In case of empty string(''), use default window
+        date_window = 15
+
     LOGGER.info("Using offset seconds {}".format(offset_secs))
     start_date -= timedelta(seconds=offset_secs)
-    # date_created__gt has precision to the second
-    formatted_start = start_date.strftime("%Y-%m-%dT%H:%M:%S")
-    params = {"date_created__gt": formatted_start}
-    request = create_request(IDS.ACTIVITIES, params=params)
-    paginated_sync(IDS.ACTIVITIES, ctx, request, formatted_start)
+
+    window_start_date = start_date._datetime
+    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    while window_start_date <= now:
+        window_end_date = window_start_date + timedelta(days=date_window)
+
+        # 'date_created__gt' and  'date_created__lt' has precision to the second
+        formatted_start_date = window_start_date.strftime("%Y-%m-%dT%H:%M:%S")
+        formatted_end_date = window_end_date.strftime("%Y-%m-%dT%H:%M:%S")
+
+        LOGGER.info("Syncing data for date window: {}, {}".format(formatted_start_date, formatted_end_date))
+
+        params = {"date_created__gt": formatted_start_date, "date_created__lt": formatted_end_date}
+        request = create_request(IDS.ACTIVITIES, params=params)
+        paginated_sync(IDS.ACTIVITIES, ctx, request, formatted_start_date)
+
+        window_start_date = window_end_date
 
 
 def sync_event_log(ctx):
