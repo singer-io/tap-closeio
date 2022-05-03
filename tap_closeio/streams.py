@@ -12,6 +12,9 @@ from .schemas import IDS
 
 LOGGER = singer.get_logger()
 
+# default date date window size in days
+DATE_WINDOW_SIZE = 5
+
 PATHS = {
     IDS.CUSTOM_FIELDS: "/custom_fields/lead/",
     IDS.LEADS: "/lead/",
@@ -168,15 +171,15 @@ def sync_activities(ctx):
 
     try:
         # get date window from config
-        date_window = int(ctx.config.get("date_window", 15))
-        # if date_window is 0, '0' or None, then set default window size of 15 days
+        date_window = int(ctx.config.get("date_window", DATE_WINDOW_SIZE))
+        # if date_window is 0, '0' or None, then set default window size of 5 days
         if not date_window:
-            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
-            date_window = 15
+            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 5 days.".format(ctx.config.get("date_window")))
+            date_window = DATE_WINDOW_SIZE
     except ValueError:
-        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
+        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 5 days.".format(ctx.config.get("date_window")))
         # In case of empty string(''), use default window
-        date_window = 15
+        date_window = DATE_WINDOW_SIZE
 
     LOGGER.info("Using offset seconds {}".format(offset_secs))
     start_date -= timedelta(seconds=offset_secs)
