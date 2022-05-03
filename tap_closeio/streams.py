@@ -172,12 +172,12 @@ def sync_activities(ctx):
     try:
         # get date window from config
         date_window = int(ctx.config.get("date_window", DATE_WINDOW_SIZE))
-        # if date_window is 0, '0' or None, then set default window size of 5 days
+        # if date_window is 0, '0' or None, then set the default window size to DATE_WINDOW_SIZE (5 days)
         if not date_window:
-            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 5 days.".format(ctx.config.get("date_window")))
+            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of {} days.".format(ctx.config.get("date_window"), DATE_WINDOW_SIZE))
             date_window = DATE_WINDOW_SIZE
     except ValueError:
-        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 5 days.".format(ctx.config.get("date_window")))
+        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of {} days.".format(ctx.config.get("date_window"), DATE_WINDOW_SIZE))
         # In case of empty string(''), use default window
         date_window = DATE_WINDOW_SIZE
 
