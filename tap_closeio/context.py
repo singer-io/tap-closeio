@@ -47,7 +47,9 @@ class Context():
     def get_offset(self, path):
         off = bks_.get_offset(self.state, path[0])
         value = (off or {}).get(path[1])
-        if path[0] == "activities" and value > 250000:
+        # for activities stream, if existing state contains offset greater
+        # than 250K, then return 0, as API will raise max_skip error
+        if value and path[0] == "activities" and value > 250000:
             return 0
         return value
 

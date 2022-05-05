@@ -120,7 +120,7 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
             # complicated once we have an extant need for it.
             if 'max_skip = ' in str(e):
                 if tap_stream_id == IDS.ACTIVITIES:
-                    LOGGER.warning("The skip cannot be greater than 250000, please reduce the date window size and try again.")
+                    LOGGER.warning("Hit max_skip error so clearing skip offset, please reduce the date window size and try again.")
                     # clear offset
                     ctx.clear_offsets(tap_stream_id)
                     ctx.write_state()
