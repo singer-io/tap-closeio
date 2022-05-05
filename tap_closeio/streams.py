@@ -124,7 +124,7 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
                     # clear offset
                     ctx.clear_offsets(tap_stream_id)
                     ctx.write_state()
-                    raise Exception(str(e) + " Hit max_skip error so clearing skip offset, please reduce the date window size and try again.") from None
+                    raise Exception(str(e) + " So, clearing skip offset, please reduce the date window size and try again.") from None
                 elif tap_stream_id == IDS.LEADS:
                     LOGGER.info(("Hit max_skip error. "
                                 "Setting bookmark to `{}` and restarting pagination.".format(
