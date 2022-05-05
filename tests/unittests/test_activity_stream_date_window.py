@@ -9,7 +9,7 @@ class TestActivityStreamDateWindow(unittest.TestCase):
 
     def test_activity_stream_default_date_window(self, mocked_paginated_sync):
         """
-            Test case to verify we are calling Activity API in 5 days window (default) when no "date_window" is passed in the config
+            Test case to verify we are calling Activity API in 15 days window (default) when no "date_window" is passed in the config
         """
         # now date
         now_date = datetime.now()
@@ -25,14 +25,13 @@ class TestActivityStreamDateWindow(unittest.TestCase):
         # function call
         sync_activities(ctx)
 
-        # verify we called 'paginated_sync' 3 times as the start date is 40 days later and default date window is 5 days
-        # as the default lookback window of 1 day is used, as a result, there will be additional 1 API call
-        self.assertEqual(mocked_paginated_sync.call_count, 9)
+        # verify we called 'paginated_sync' 3 times as the start date is 40 days later and default date window is 15 days
+        self.assertEqual(mocked_paginated_sync.call_count, 3)
 
     @mock.patch("tap_closeio.streams.LOGGER.warning")
     def test_activity_stream_empty_string_date_window(self, mocked_logger_warning, mocked_paginated_sync):
         """
-            Test case to verify we are calling Activity API in 5 days window (default) when empty string "date_window" is passed in the config
+            Test case to verify we are calling Activity API in 15 days window (default) when empty string "date_window" is passed in the config
         """
         # now date
         now_date = datetime.now()
@@ -50,15 +49,14 @@ class TestActivityStreamDateWindow(unittest.TestCase):
         sync_activities(ctx)
 
         # verify we called 'paginated_sync' 14 times as the start date is 40 days later and we have set default date window
-        # as the default lookback window of 1 day is used, as a result, there will be additional 1 API call
-        self.assertEqual(mocked_paginated_sync.call_count, 9)
+        self.assertEqual(mocked_paginated_sync.call_count, 3)
         # verify warning is raised for invalid date window
-        mocked_logger_warning.assert_called_with("Invalid value of date window is passed: '', using default window size of 5 days.")
+        mocked_logger_warning.assert_called_with("Invalid value of date window is passed: '', using default window size of 15 days.")
 
     @mock.patch("tap_closeio.streams.LOGGER.warning")
     def test_activity_stream_0_date_window(self, mocked_logger_warning, mocked_paginated_sync):
         """
-            Test case to verify we are calling Activity API in 5 days window (default) when int 0 "date_window" is passed in the config
+            Test case to verify we are calling Activity API in 15 days window (default) when int 0 "date_window" is passed in the config
         """
         # now date
         now_date = datetime.now()
@@ -76,15 +74,14 @@ class TestActivityStreamDateWindow(unittest.TestCase):
         sync_activities(ctx)
 
         # verify we called 'paginated_sync' 14 times as the start date is 40 days later and we have set default date window
-        # as the default lookback window of 1 day is used, as a result, there will be additional 1 API call
-        self.assertEqual(mocked_paginated_sync.call_count, 9)
+        self.assertEqual(mocked_paginated_sync.call_count, 3)
         # verify warning is raised for invalid date window
-        mocked_logger_warning.assert_called_with("Invalid value of date window is passed: '0', using default window size of 5 days.")
+        mocked_logger_warning.assert_called_with("Invalid value of date window is passed: '0', using default window size of 15 days.")
 
     @mock.patch("tap_closeio.streams.LOGGER.warning")
     def test_activity_stream_string_0_date_window(self, mocked_logger_warning, mocked_paginated_sync):
         """
-            Test case to verify we are calling Activity API in 5 days window (default) when string 0 "date_window" is passed in the config
+            Test case to verify we are calling Activity API in 15 days window (default) when string 0 "date_window" is passed in the config
         """
         # now date
         now_date = datetime.now()
@@ -102,10 +99,9 @@ class TestActivityStreamDateWindow(unittest.TestCase):
         sync_activities(ctx)
 
         # verify we called 'paginated_sync' 14 times as the start date is 40 days later and we have set default date window
-        # as the default lookback window of 1 day is used, as a result, there will be additional 1 API call
-        self.assertEqual(mocked_paginated_sync.call_count, 9)
+        self.assertEqual(mocked_paginated_sync.call_count, 3)
         # verify warning is raised for invalid date window
-        mocked_logger_warning.assert_called_with("Invalid value of date window is passed: '0', using default window size of 5 days.")
+        mocked_logger_warning.assert_called_with("Invalid value of date window is passed: '0', using default window size of 15 days.")
 
     def test_activity_stream_configurable_date_window(self, mocked_paginated_sync):
         """
