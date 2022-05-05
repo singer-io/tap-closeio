@@ -12,6 +12,9 @@ from .schemas import IDS
 
 LOGGER = singer.get_logger()
 
+# default date date window size in days
+DATE_WINDOW_SIZE = 15
+
 PATHS = {
     IDS.CUSTOM_FIELDS: "/custom_fields/lead/",
     IDS.LEADS: "/lead/",
@@ -115,15 +118,24 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
             # There may be streams other than `leads` that will run into
             # `max_skip` errors but YAGNI. We can make the tap more
             # complicated once we have an extant need for it.
-            if 'max_skip = ' in str(e) and tap_stream_id == IDS.LEADS:
-                LOGGER.info(("Hit max_skip error. "
-                             "Setting bookmark to `{}` and restarting pagination.".format(
-                                 max_bookmark)))
-                skip = 0
-                ctx.clear_offsets(tap_stream_id)
-                ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)
-                _request = create_leads_request(ctx)
-                ctx.write_state()
+            if 'max_skip = ' in str(e):
+                if tap_stream_id == IDS.ACTIVITIES:
+                    LOGGER.warning("Hit max_skip error so clearing skip offset, please reduce the date window size and try again.")
+                    # clear offset
+                    ctx.clear_offsets(tap_stream_id)
+                    ctx.write_state()
+                    raise Exception(str(e) + " So, clearing skip offset, please reduce the date window size and try again.") from None
+                elif tap_stream_id == IDS.LEADS:
+                    LOGGER.info(("Hit max_skip error. "
+                                "Setting bookmark to `{}` and restarting pagination.".format(
+                                    max_bookmark)))
+                    skip = 0
+                    ctx.clear_offsets(tap_stream_id)
+                    ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)
+                    _request = create_leads_request(ctx)
+                    ctx.write_state()
+                else:
+                    raise
             else:
                 raise
     ctx.clear_offsets(tap_stream_id)
@@ -168,15 +180,15 @@ def sync_activities(ctx):
 
     try:
         # get date window from config
-        date_window = int(ctx.config.get("date_window", 15))
-        # if date_window is 0, '0' or None, then set default window size of 15 days
+        date_window = int(ctx.config.get("date_window", DATE_WINDOW_SIZE))
+        # if date_window is 0, '0' or None, then set the default window size to DATE_WINDOW_SIZE (15 days)
         if not date_window:
-            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
-            date_window = 15
+            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of {} days.".format(ctx.config.get("date_window"), DATE_WINDOW_SIZE))
+            date_window = DATE_WINDOW_SIZE
     except ValueError:
-        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
+        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of {} days.".format(ctx.config.get("date_window"), DATE_WINDOW_SIZE))
         # In case of empty string(''), use default window
-        date_window = 15
+        date_window = DATE_WINDOW_SIZE
 
     LOGGER.info("Using offset seconds {}".format(offset_secs))
     start_date -= timedelta(seconds=offset_secs)
