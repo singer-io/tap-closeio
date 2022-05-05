@@ -112,7 +112,7 @@ class TestOffsetClear(unittest.TestCase):
             paginated_sync(IDS.ACTIVITIES, context, request, "2022-01-01")
 
         # verify the error message
-        self.assertEqual(str(e.exception), "The skip you set is larger than the maximum skip for this resource (max_skip = 250000).")
+        self.assertEqual(str(e.exception), "The skip you set is larger than the maximum skip for this resource (max_skip = 250000). Hit max_skip error so clearing skip offset, please reduce the date window size and try again.")
         # verify we did not get 'skip' in the state file
         self.assertIsNone(state.get("bookmarks").get("activities").get("offset").get("skip"))
         # verify we log 'reduce date window' message
