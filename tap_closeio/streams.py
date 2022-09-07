@@ -36,13 +36,14 @@ FORMATTERS = {
     IDS.LEADS: format_leads,
 }
 
+BOOKMARK_NOW = datetime.utcnow()
 
 def bookmark(tap_stream_id):
     return [tap_stream_id, BOOK_KEYS[tap_stream_id]]
 
 
 def new_max_bookmark(max_bookmark, records, key):
-    now = datetime.utcnow()
+    now = BOOKMARK_NOW
     max_bookmark = pendulum.parse(max_bookmark)
     for record in records:
         potential_bookmark = pendulum.parse(record[key])
