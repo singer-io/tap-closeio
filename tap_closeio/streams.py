@@ -46,7 +46,7 @@ def new_max_bookmark(max_bookmark, records, key):
     max_bookmark = pendulum.parse(max_bookmark)
     for record in records:
         potential_bookmark = pendulum.parse(record[key])
-        if potential_bookmark > max_bookmark and potential_bookmark <= now:
+        if max_bookmark < potential_bookmark  and potential_bookmark <= now:
             max_bookmark = potential_bookmark
         elif potential_bookmark > now:
             LOGGER.info(f"Got future-dated bookmark value `{potential_bookmark}`; not updating state.")
