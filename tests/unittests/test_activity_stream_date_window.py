@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import unittest
 from unittest import mock
-from tap_closeio.streams import sync_activities
+from tap_closeio.streams import sync_activities, new_max_bookmark
 from tap_closeio.context import Context
 
 @mock.patch("tap_closeio.streams.paginated_sync")
@@ -124,3 +124,52 @@ class TestActivityStreamDateWindow(unittest.TestCase):
 
         # verify we called 'paginated_sync' 14 times as the start date is 40 days later and we have set date window as 3 days
         self.assertEqual(mocked_paginated_sync.call_count, 14)
+
+
+class TestActivityStreamBookmark(unittest.TestCase):
+    def test_new_max_bookmark_valid_potential(self):
+        """
+            Test case to verify that new_max_bookmark correctly updates max_bookmark for values less than now().
+        """
+
+        # create the records that will be looped over by new_max_bookmark
+        records = [
+            {"date_created": "2022-09-02T12:00:00+00:00"},
+            {"date_created": "2022-09-03T19:00:00+00:00"},
+            {"date_created": "2022-09-04T12:00:00+00:00"},
+        ]
+
+        # create the starting max_bookmark
+        max_bookmark = "2022-09-01T12:00:00+00:00"
+
+        expected = "2022-09-04T12:00:00+00:00"
+        actual = new_max_bookmark(max_bookmark, records, "date_created")
+
+        # verify that the bookmark is updated to the greatest date_created contained in the records list
+        self.assertEqual(expected, actual)
+
+    def test_new_max_bookmark_future_dated_potential(self):
+        """
+            Test case to verify that new_max_bookmark does not update max_bookmark for values greater than now().
+            We've regularly seen Close.io return date_created values greater than now despite using the date_created__lt request parameter.
+        """
+
+        # establish a consistent future_date value for a record to hold as date_created
+        future_date = datetime.utcnow() + timedelta(days=10)
+
+        # create the records that will be looped over by new_max_bookmark
+        records = [
+            {"date_created": "2022-09-02T12:00:00+00:00"},
+            {"date_created": "2022-09-03T19:00:00+00:00"},
+            {"date_created": "2022-09-04T12:00:00+00:00"},
+            {"date_created": str(future_date)},
+        ]
+
+        # create the starting max_bookmark
+        max_bookmark = "2022-09-01T12:00:00+00:00"
+
+        expected = "2022-09-04T12:00:00+00:00"
+        actual = new_max_bookmark(max_bookmark, records, "date_created")
+
+        # verify that the bookmark is updated to the greatest date_created contained in the records list that is less than the future date
+        self.assertEqual(expected, actual)

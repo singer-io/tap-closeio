@@ -42,10 +42,15 @@ def bookmark(tap_stream_id):
 
 
 def new_max_bookmark(max_bookmark, records, key):
+    now = datetime.utcnow()
+    max_bookmark = pendulum.parse(max_bookmark)
     for record in records:
-        if record[key] > max_bookmark:
-            max_bookmark = record[key]
-    return max_bookmark
+        potential_bookmark = pendulum.parse(record[key])
+        if potential_bookmark > max_bookmark and potential_bookmark <= now:
+            max_bookmark = potential_bookmark
+        elif potential_bookmark > now:
+            LOGGER.info(f"Got future-dated bookmark value `{potential_bookmark}`; not updating state.")
+    return str(max_bookmark)
 
 
 def format_dts(tap_stream_id, ctx, records):
@@ -185,6 +190,7 @@ def sync_activities(ctx):
     now = datetime.utcnow().replace(tzinfo=timezone.utc)
     while window_start_date <= now:
         window_end_date = window_start_date + timedelta(days=date_window)
+
 
         # 'date_created__gt' and  'date_created__lt' has precision to the second
         formatted_start_date = window_start_date.strftime("%Y-%m-%dT%H:%M:%S")
