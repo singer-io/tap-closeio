@@ -1,7 +1,11 @@
 # Changelog
 
+## 1.6.4
+  * Ensures future-dated bookmarks cannot be written to state. Adds corresponding unittests [#30](https://github.com/singer-io/tap-closeio/pull/30)
+
 ## 1.6.3
   * Update pagination to respect max page limits [#27](https://github.com/singer-io/tap-closeio/pull/27)
+
 ## 1.6.2
   * Increases the timeout on HTTP requests for data [#21](https://github.com/singer-io/tap-closeio/pull/21)
 
