@@ -36,16 +36,22 @@ FORMATTERS = {
     IDS.LEADS: format_leads,
 }
 
+SYNC_START = datetime.utcnow()
 
 def bookmark(tap_stream_id):
     return [tap_stream_id, BOOK_KEYS[tap_stream_id]]
 
 
 def new_max_bookmark(max_bookmark, records, key):
+    now = SYNC_START
+    max_bookmark = pendulum.parse(max_bookmark)
     for record in records:
-        if record[key] > max_bookmark:
-            max_bookmark = record[key]
-    return max_bookmark
+        potential_bookmark = pendulum.parse(record[key])
+        if max_bookmark < potential_bookmark  and potential_bookmark <= now:
+            max_bookmark = potential_bookmark
+        elif potential_bookmark > now:
+            LOGGER.info(f"Got future-dated bookmark value `{potential_bookmark}`; not updating state.")
+    return str(max_bookmark)
 
 
 def format_dts(tap_stream_id, ctx, records):
@@ -169,7 +175,7 @@ def sync_activities(ctx):
     try:
         # get date window from config
         date_window = int(ctx.config.get("date_window", 15))
-        # if date_window is 0, '0' or None, then set default window size of 15 days
+       # if date_window is 0, '0' or None, then set default window size of 15 days
         if not date_window:
             LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
             date_window = 15
@@ -182,9 +188,10 @@ def sync_activities(ctx):
     start_date -= timedelta(seconds=offset_secs)
 
     window_start_date = start_date._datetime
-    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    now = SYNC_START.replace(tzinfo=timezone.utc)
     while window_start_date <= now:
         window_end_date = window_start_date + timedelta(days=date_window)
+
 
         # 'date_created__gt' and  'date_created__lt' has precision to the second
         formatted_start_date = window_start_date.strftime("%Y-%m-%dT%H:%M:%S")
@@ -232,7 +239,7 @@ def sync_event_log(ctx):
     # > scan the latest five minutes of events.
     # Therefore we do not set the bookmark to any value that is in the last
     # five minutes.
-    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    now = SYNC_START.replace(tzinfo=timezone.utc)
     five_minutes_ago = strftime(now - timedelta(minutes=5))
     max_bookmark = min(five_minutes_ago, max_bookmark)
     ctx.set_bookmark(bookmark(IDS.EVENT_LOG), max_bookmark)
