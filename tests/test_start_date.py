@@ -17,12 +17,12 @@ class CloseioStartDateTest(StartDateTest, CloseioBase):
                 'leads',
                 'tasks',
                 'custom_fields',
-                #'event_log',  # TODO No records due to no recent activity
+                #'event_log',  # TODO Sync1 and Sync2 have same amount of data
                 }
 
 
     # set default values for test in init
     def __init__(self, test_run):
         super().__init__(test_run)
-        self.start_date_1 ='2015-03-25T00:00:00Z'  #'2020-03-25T00:00:00Z'use these values for debug mode
-        self.start_date_2 ='2017-08-25T00:00:00Z'  #'2020-08-11T00:00:00Z'use these values for debug mode
+        self.start_date_1 ='2015-03-25T00:00:00Z' #'2020-03-25T00:00:00Z'use these values for debug mode
+        self.start_date_2 ='2017-01-25T00:00:00Z'  #'2017-08-11T00:00:00Z'use these values for debug mode
