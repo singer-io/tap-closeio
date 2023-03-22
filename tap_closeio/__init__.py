@@ -34,7 +34,8 @@ def discover(ctx):
             schema_dict,
             key_properties=schemas.PK_FIELDS[tap_stream_id],
             valid_replication_keys=["date_updated","date_created"],
-            replication_method=["INCREMENTAL"]
+            # replication_method=["INCREMENTAL"]
+            replication_method="INCREMENTAL"
         )
         mdata = metadata.to_map(mdata)
 
