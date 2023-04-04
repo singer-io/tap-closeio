@@ -74,7 +74,21 @@ class CloseioBase(BaseCase):
 
         return {
             'activities': {
-                self.AUTOMATIC_FIELDS: {
+                self.PRIMARY_KEYS: {"id"},
+                self.REPLICATION_METHOD: self.INCREMENTAL,
+                self.REPLICATION_KEYS: {"date_created"},
+                self.RESPECTS_START_DATE: True,
+            },
+            'custom_fields': default_expectations,
+            'event_log': default_expectations,
+            'leads': default_expectations,
+            'tasks': default_expectations,
+            'users': default_expectations
+        }
+
+    def expected_automatic_fields(self):
+        auto_fields ={
+            'activities': {
                     'need_smtp_credentials',
                     'cc',
                     'send_attempts',
@@ -147,13 +161,7 @@ class CloseioBase(BaseCase):
                     'transferred_to',
                     'phone',
                 },
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-                self.REPLICATION_KEYS: {"date_created"},
-                self.RESPECTS_START_DATE: True,
-            },
-            'custom_fields': {
-                self.AUTOMATIC_FIELDS: {
+    'custom_fields': {
                     'date_created',
                     'date_updated',
                     'editable_with_roles',
@@ -165,14 +173,7 @@ class CloseioBase(BaseCase):
                     'type',
                     'updated_by',
                 },
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-                self.REPLICATION_KEYS: {"date_updated"},
-                self.RESPECTS_START_DATE: True,
-            },
-
             'event_log': {
-                self.AUTOMATIC_FIELDS: {
                     'date_updated',
                     'id',
                     'previous_data',
@@ -188,14 +189,7 @@ class CloseioBase(BaseCase):
                     'changed_fields',
                     'object_type',
                 },
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-                self.REPLICATION_KEYS: {"date_updated"},
-                self.RESPECTS_START_DATE: True,
-            },
-
             'leads': {
-                self.AUTOMATIC_FIELDS: {
                     'date_updated',
                     'display_name',
                     'addresses',
@@ -218,14 +212,7 @@ class CloseioBase(BaseCase):
                     'created_by_name',
                     'updated_by',
                 },
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-                self.REPLICATION_KEYS: {"date_updated"},
-                self.RESPECTS_START_DATE: True,
-            },
-
             'tasks': {
-                self.AUTOMATIC_FIELDS: {
                     'date_created',
                     'date_updated',
                     'id',
@@ -269,14 +256,7 @@ class CloseioBase(BaseCase):
                     'assigned_to_name',
                     'opportunity_value_period',
                 },
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-                self.REPLICATION_KEYS: {"date_updated"},
-                self.RESPECTS_START_DATE: True,
-            },
-
             'users': {
-                self.AUTOMATIC_FIELDS: {
                     'date_updated',
                     'id',
                     'last_name',
@@ -287,19 +267,7 @@ class CloseioBase(BaseCase):
                     'image',
                     'last_used_timezone',
                 },
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-                self.REPLICATION_KEYS: {"date_updated"},
-                self.RESPECTS_START_DATE: True,
-            }
-
         }
-
-    def expected_automatic_fields(self):
-        auto_fields = {}
-        for k, v in self.expected_metadata().items():
-            auto_fields[k] = v.get(self.AUTOMATIC_FIELDS, set())
-
         return auto_fields
 
 
@@ -338,7 +306,6 @@ class CloseioBase(BaseCase):
         }
 
 
-
     # TODO refactor code to remove this method if possible, ga4 relic
     def get_stream_name(self, stream):
         """
@@ -351,24 +318,7 @@ class CloseioBase(BaseCase):
         """
         stream_name=stream
         # custom_reports_names_to_ids().get(tap_stream_id, tap_stream_id)
-        return stream_name 
-
-
-    @staticmethod
-    def select_all_streams_and_fields(conn_id, catalogs, select_all_fields: bool = True):
-        """Select all streams and all fields within streams"""
-        for catalog in catalogs:
-            schema = menagerie.get_annotated_schema(conn_id, catalog['stream_id'])
-
-            non_selected_properties = []
-            if not select_all_fields:
-                # get a list of all properties so that none are selected
-                non_selected_properties = schema.get('annotated-schema', {}).get(
-                    'properties', {}).keys()
-
-            connections.select_catalog_and_fields_via_metadata(
-                conn_id, catalog, schema, [], non_selected_properties)
-
+        return stream_name
 
     def perform_and_verify_table_and_field_selection(self,
                                                      conn_id,
@@ -381,11 +331,9 @@ class CloseioBase(BaseCase):
         fields selected for those streams.
         """
 
-
         # Select all available fields or select no fields from all testable streams
         self.select_all_streams_and_fields(
-            conn_id=conn_id, catalogs=test_catalogs, select_all_fields=select_all_fields
-        )
+            conn_id, test_catalogs, select_all_fields )
 
         catalogs = menagerie.get_catalogs(conn_id)
 

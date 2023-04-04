@@ -23,7 +23,6 @@ class CloseioDiscoveryTest(DiscoveryTest, CloseioBase):
     def test_inclusion_by_streams(self):
         for stream in self.streams_to_test():
             with self.subTest(stream=stream):
-
                 # gather expectations
                 expected_automatic_fields = self.expected_automatic_fields()[stream]
 
