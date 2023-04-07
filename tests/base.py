@@ -21,7 +21,7 @@ class CloseioBase(BaseCase):
 
 
     REPLICATION_KEY_FORMAT = "%Y-%m-%dT00:00:00.000000Z"
-    BOOKMARK_FORMAT = "%Y-%m-%d"
+    BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
     PAGE_SIZE = 100000
     start_date = ""
 
@@ -386,7 +386,32 @@ class CloseioBase(BaseCase):
     def get_bookmark_value(self, state, stream):
         bookmark = state.get('bookmarks', {})
         stream_bookmark = bookmark.get(stream)
-        stream_replication_key = self.expected_metadata().get(stream,set()).get('REPLICATION_KEYS')
+        stream_replication_key = self.expected_metadata().get(stream).get(self.REPLICATION_KEYS)
         if stream_bookmark:
-            return stream_bookmark.get(stream_replication_key)
+            return stream_bookmark.get(stream_replication_key.pop())
         return None
+
+#    def test_sync_2_bookmark_greater_than_sync_1(self):
+#        """
+#        Compares bookmark values of both syncs if bookmark values are
+#        precise enough to always get a greater value in the second sync
+#
+#        Skip if this is not the case
+#
+#        ex: bookmark format: YYYY-MM-DDTHH:MM:SS
+#        """
+#        for stream in self.streams_to_test():
+#            with self.subTest(stream=stream):
+#                # gather results
+#                stream_bookmark_1 = self.bookmarks_1.get(stream)
+#                stream_bookmark_2 = self.bookmarks_2.get(stream)
+#
+#                bookmark_value_1 = self.get_bookmark_value(self.state_1, stream)
+#                bookmark_value_2 = self.get_bookmark_value(self.state_2, stream)
+#
+#                # Verify second sync bookmark is equal or greater than the
+#                # first sync bookmark
+#                parsed_bookmark_value_1 = self.parse_date(bookmark_value_1)
+#                parsed_bookmark_value_2 = self.parse_date(bookmark_value_2)
+#                self.assertGreater(parsed_bookmark_value_2, parsed_bookmark_value_1)
+#
