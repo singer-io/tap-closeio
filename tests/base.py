@@ -276,7 +276,7 @@ class CloseioBase(BaseCase):
         super().setUpClass(logging="Ensuring environment variables are sourced.")
         missing_envs = [
             x for x in [
-                'TAP_CLOSEIO_API_KEY' #TODO add account_id and password if needed(credentials)
+                'TAP_CLOSEIO_API_KEY', 
             ] if os.getenv(x) is None
         ]
 
@@ -391,27 +391,3 @@ class CloseioBase(BaseCase):
             return stream_bookmark.get(stream_replication_key.pop())
         return None
 
-#    def test_sync_2_bookmark_greater_than_sync_1(self):
-#        """
-#        Compares bookmark values of both syncs if bookmark values are
-#        precise enough to always get a greater value in the second sync
-#
-#        Skip if this is not the case
-#
-#        ex: bookmark format: YYYY-MM-DDTHH:MM:SS
-#        """
-#        for stream in self.streams_to_test():
-#            with self.subTest(stream=stream):
-#                # gather results
-#                stream_bookmark_1 = self.bookmarks_1.get(stream)
-#                stream_bookmark_2 = self.bookmarks_2.get(stream)
-#
-#                bookmark_value_1 = self.get_bookmark_value(self.state_1, stream)
-#                bookmark_value_2 = self.get_bookmark_value(self.state_2, stream)
-#
-#                # Verify second sync bookmark is equal or greater than the
-#                # first sync bookmark
-#                parsed_bookmark_value_1 = self.parse_date(bookmark_value_1)
-#                parsed_bookmark_value_2 = self.parse_date(bookmark_value_2)
-#                self.assertGreater(parsed_bookmark_value_2, parsed_bookmark_value_1)
-#
