@@ -28,6 +28,14 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
         return manipulated_state
 
 
+    @unittest.skip("Does not apply")
+    def test_sync_2_bookmark_greater_than_sync_1(self):
+        """
+        This test is meant for taps where bookmark percision is fine enough to always get greater
+        bookmark values between syncs.  This tap uses bookmark values based on the last record
+        and does not get new data fast enough (or at all) to support this test.
+        """
+
     # set default values for test in init
     def __init__(self, test_run):
         super().__init__(test_run)
