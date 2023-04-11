@@ -287,107 +287,13 @@ class CloseioBase(BaseCase):
     ##########################################################################
     ### Tap Specific Methods
     ##########################################################################
-
-
-    @staticmethod
-    def expected_pagination_fields(): # TODO does this apply?
-        return {
-            "Test Report 1" : set(),
-            "Audience Overview": {
-                "ga:users", "ga:newUsers", "ga:sessions", "ga:sessionsPerUser", "ga:pageviews",
-                "ga:pageviewsPerSession", "ga:sessionDuration", "ga:bounceRate", "ga:date",
-                # "ga:pageviews",
-            },
-            "Audience Geo Location": set(),
-            "Audience Technology": set(),
-            "Acquisition Overview": set(),
-            "Behavior Overview": set(),
-            "Ecommerce Overview": set(),
-        }
-
-
-    # TODO refactor code to remove this method if possible, ga4 relic
-    def get_stream_name(self, stream):
-        """
-        Returns the stream_name given the tap_stream_id because synced_records
-        from the target output batches records by stream_name
-
-        Since the GA4 tap_stream_id is a UUID instead of the usual case of
-        tap_stream_id == stream_name, we need to get the stream_name that
-        maps to tap_stream_id
-        """
-        stream_name=stream
-        # custom_reports_names_to_ids().get(tap_stream_id, tap_stream_id)
-        return stream_name
-
-    def perform_and_verify_table_and_field_selection(self,
-                                                     conn_id,
-                                                     test_catalogs,
-                                                     select_all_fields=True):
-        """
-        Perform table and field selection based off of the streams to select
-        set and field selection parameters.
-        Verify this results in the expected streams selected and all or no
-        fields selected for those streams.
-        """
-
-        # Select all available fields or select no fields from all testable streams
-        self.select_all_streams_and_fields(
-            conn_id, test_catalogs, select_all_fields )
-
-        catalogs = menagerie.get_catalogs(conn_id)
-
-        # Ensure our selection affects the catalog
-        expected_selected = [tc.get('stream_name') for tc in test_catalogs]
-        for cat in catalogs:
-            catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
-
-            # Verify all testable streams are selected
-            selected = catalog_entry.get('annotated-schema').get('selected')
-            print("Validating selection on {}: {}".format(cat['stream_name'], selected))
-            if cat['stream_name'] not in expected_selected:
-                self.assertFalse(selected, msg="Stream selected, but not testable.")
-                continue # Skip remaining assertions if we aren't selecting this stream
-            self.assertTrue(selected, msg="Stream not selected.")
-
-            if select_all_fields:
-                # Verify all fields within each selected stream are selected
-                for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
-                    field_selected = field_props.get('selected')
-                    print("\tValidating selection on {}.{}: {}".format(
-                        cat['stream_name'], field, field_selected))
-                    self.assertTrue(field_selected, msg="Field not selected.")
-            else:
-                # Verify only automatic fields are selected
-                expected_automatic_fields = self.expected_automatic_fields().get(cat['stream_name'])
-                selected_fields = self.get_selected_fields_from_metadata(catalog_entry['metadata'])
-                self.assertEqual(expected_automatic_fields, selected_fields)
-
-
-    def get_sync_start_time(self, stream, bookmark):
-        """
-        Calculates the sync start time, with respect to the lookback window
-        """
-        conversion_day = dt.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None) - timedelta(days=self.lookback_window)
-        bookmark_datetime = dt.strptime(bookmark, self.BOOKMARK_FORMAT)
-        start_date_datetime = dt.strptime(self.start_date, self.START_DATE_FORMAT)
-        return  min(bookmark_datetime, max(start_date_datetime, conversion_day))
-
-
-    # TODO is this still useful now that we have get_stream_name?
-    def get_record_count_by_stream(self, record_count, stream):
-        count = record_count.get(stream)
-        if not count:
-            stream_name = self.custom_reports_names_to_ids().get(stream)
-            return record_count.get(stream_name)
-        return count
-
-
-    def get_bookmark_value(self, state, stream):
-        bookmark = state.get('bookmarks', {})
-        stream_bookmark = bookmark.get(stream)
-        stream_replication_key = self.expected_metadata().get(stream).get(self.REPLICATION_KEYS)
-        if stream_bookmark:
-            return stream_bookmark.get(stream_replication_key.pop())
-        return None
+    #TODO refactor the below method to address the attribution window issue for activites stream
+    # def get_sync_start_time(self, stream, bookmark):
+    #     """
+    #     Calculates the sync start time, with respect to the lookback window
+    #     """
+    #     conversion_day = dt.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None) - timedelta(days=self.lookback_window)
+    #     bookmark_datetime = dt.strptime(bookmark, self.BOOKMARK_FORMAT)
+    #     start_date_datetime = dt.strptime(self.start_date, self.START_DATE_FORMAT)
+    #     return  min(bookmark_datetime, max(start_date_datetime, conversion_day))
 

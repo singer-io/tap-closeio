@@ -27,7 +27,6 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
           }
         return manipulated_state
 
-
     @unittest.skip("Does not apply")
     def test_sync_2_bookmark_greater_than_sync_1(self):
         """
@@ -42,4 +41,3 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
 
         #Hard coded bookmark_date as there are no active records
         self.bookmark_date = '2018-01-25T00:00:00Z'
-

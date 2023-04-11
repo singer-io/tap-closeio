@@ -15,7 +15,7 @@ class CloseioDiscoveryTest(DiscoveryTest, CloseioBase):
 
     def streams_to_test(self):
         return set(self.expected_metadata().keys())
-    #return set(self.expected_metadata().keys(){'activities'}
+
     ############################################################################
     #overridden tests to test other fields inclusioons
     ###########################################################################
