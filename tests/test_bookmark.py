@@ -15,8 +15,8 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
         return "tt_closeio_bookmark"
 
     def streams_to_test(self):
-        expected_streams = self.expected_metadata().keys()
-        return set(expected_streams).difference(['event_log', 'activities'])
+        streams_to_exclude = {'event_log', 'custom_fields'}
+        return set(self.expected_metadata().keys()) - streams_to_exclude
 
     def manipulate_state(self, old_state):
         manipulated_state = {
