@@ -1,5 +1,3 @@
-import unittest
-
 from tap_tester import menagerie, connections
 from tap_tester.base_suite_tests.discovery_test import DiscoveryTest
 
@@ -19,7 +17,8 @@ class CloseioDiscoveryTest(DiscoveryTest, CloseioBase):
     ############################################################################
     #overridden tests to test other fields inclusioons
     ###########################################################################
-
+    #All fields are automatic and the standard implementation fails.
+    #The test is overridden to allow for this as it is expected behavior for this tap
     def test_inclusion_by_streams(self):
         for stream in self.streams_to_test():
             with self.subTest(stream=stream):
@@ -50,8 +49,7 @@ class CloseioDiscoveryTest(DiscoveryTest, CloseioBase):
                     and item.get("breadcrumb", ["properties", None])[1] not in actual_automatic_fields
                 }
 
-
                 with self.subTest(msg="validating automatic fields"):
                     self.assertEqual(len(inclusions_other_than_automatic), 0,
-                        msg="Not all non key properties are set to 'available' in metadata",
-                        logging="verify all non-automatic fields are available")
+                        msg="There are non-automatic fields",
+                        logging="verifying if there are any non-automatic fields")

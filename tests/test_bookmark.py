@@ -1,8 +1,4 @@
-import os
 import unittest
-from datetime import datetime as dt
-from datetime import timedelta
-
 from base import CloseioBase
 from tap_tester.base_suite_tests.bookmark_test import BookmarkTest
 
