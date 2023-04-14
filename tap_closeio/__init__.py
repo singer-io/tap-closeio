@@ -30,8 +30,12 @@ def discover(ctx):
             continue
         schema_dict = schemas.load_schema(ctx, tap_stream_id)
         schema = Schema.from_dict(schema_dict)
-        mdata = metadata.get_standard_metadata(schema_dict,
-                                               key_properties=schemas.PK_FIELDS[tap_stream_id])
+        mdata = metadata.get_standard_metadata(
+            schema_dict,
+            key_properties=schemas.PK_FIELDS[tap_stream_id],
+            valid_replication_keys=["date_updated","date_created"],
+            replication_method="INCREMENTAL"
+        )
         mdata = metadata.to_map(mdata)
 
         for field_name in schema_dict['properties'].keys():
