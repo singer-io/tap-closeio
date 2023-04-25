@@ -12,7 +12,7 @@ class CloseioDiscoveryTest(DiscoveryTest, CloseioBase):
         return "tt_closeio_discovery"
 
     def streams_to_test(self):
-        return set(self.expected_metadata().keys())
+        return self.expected_stream_names()
 
     # ###########################################################################
     # overridden tests to test other fields inclusions
