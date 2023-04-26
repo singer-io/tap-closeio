@@ -20,18 +20,6 @@ class CloseioBase(BaseCase):
     BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
     PAGE_SIZE = 100000
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._start_date = ""
-
-    @property
-    def start_date(self):
-        return self._start_date
-
-    @start_date.setter
-    def start_date(self, value):
-        self._start_date = value
-
     @staticmethod
     def tap_name():
         """The name of the tap"""
