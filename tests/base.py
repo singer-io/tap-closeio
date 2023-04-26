@@ -28,6 +28,10 @@ class CloseioBase(BaseCase):
     def start_date(self):
         return self._start_date
 
+    @start_date.setter
+    def start_date(self, value):
+        self._start_date = value
+
     @staticmethod
     def tap_name():
         """The name of the tap"""
