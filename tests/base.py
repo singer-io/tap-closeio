@@ -78,7 +78,7 @@ class CloseioBase(BaseCase):
 
     @staticmethod
     def expected_automatic_fields():
-        auto_fields = {
+        return {
             'activities': {
                 'need_smtp_credentials',
                 'cc',
@@ -259,7 +259,6 @@ class CloseioBase(BaseCase):
                 'last_used_timezone',
             },
         }
-        return auto_fields
 
     @classmethod
     def setUpClass(cls):

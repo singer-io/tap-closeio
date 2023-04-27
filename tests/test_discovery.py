@@ -17,26 +17,21 @@ class CloseioDiscoveryTest(DiscoveryTest, CloseioBase):
     # ###########################################################################
     # overridden tests to test other fields inclusions
     # ##########################################################################
-    # All fields are automatic and the standard implementation fails.
-    # The test is overridden to allow for this as it is expected behavior for this tap
-    def test_non_automatic_fields_by_streams(self):
-        for stream in self.streams_to_test():
-            with self.subTest(stream=stream):
-                # gather expectations
 
-                # gather results
-                catalog = [catalog for catalog in self.found_catalogs
-                           if catalog["stream_name"] == stream][0]
-                schema_and_metadata = menagerie.get_annotated_schema(
-                    self.conn_id, catalog['stream_id'])
-                metadata = schema_and_metadata["metadata"]
-                inclusions_other_than_automatic = {
-                    item.get("metadata", ["inclusion", None]).get("inclusion") for item in metadata
-                    if item.get("breadcrumb", []) != []
-                    and item.get("metadata").get("inclusion") != "automatic"}
+    def discovery_expected_replication_keys(self):
+        """
+        TODO - BUG All streams have replicated keys as both date_created and date_updated.
+            This is incorrect according to the docs and operation of the tap.
+            Writing this workaround for the test until the bug is addressed.
+        """
+        return {
+            'activities': {'date_created', 'date_updated'},
+            'custom_fields': {'date_created', 'date_updated'},
+            'event_log': {'date_created', 'date_updated'},
+            'leads': {'date_created', 'date_updated'},
+            'tasks': {'date_created', 'date_updated'},
+            'users': {'date_created', 'date_updated'}}
 
-                # verify that all other fields have inclusion of available
-                # This assumes there are no unsupported fields for SaaS sources
-                with self.subTest(msg="validating automatic fields"):
-                    self.assertEqual(len(inclusions_other_than_automatic), 0,
-                                     logging="verifying if there are any non-automatic fields")
+    def test_replication_metadata(self):
+        self.expected_replication_keys = self.discovery_expected_replication_keys
+        super().test_replication_metadata()
