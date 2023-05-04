@@ -3,6 +3,7 @@ Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
 import os
+from datetime import timedelta
 
 from tap_tester.base_suite_tests.base_case import BaseCase
 
@@ -68,6 +69,7 @@ class CloseioBase(BaseCase):
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
                 BaseCase.REPLICATION_KEYS: {"date_created"},
                 BaseCase.RESPECTS_START_DATE: True,
+                BaseCase.LOOK_BACK_WINDOW: timedelta(hours=24)
             },
             'custom_fields': default_expectations,
             'event_log': default_expectations,

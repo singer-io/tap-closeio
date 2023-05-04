@@ -1,39 +1,39 @@
-import unittest
 from base import CloseioBase
 from tap_tester.base_suite_tests.bookmark_test import BookmarkTest
+
 
 class CloseioBookmarkTest(BookmarkTest, CloseioBase):
     """Closeio bookmark test implementation"""
 
+    BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
+
+    @staticmethod
+    def INITIAL_BOOKMARKS():
+        return {
+            'bookmarks': {
+                'custom_fields': {'date_updated': '2016-07-07T14:22:04.624000Z'},
+                'leads': {'date_updated': '2020-05-06T18:54:08.250000Z'},
+                'activities': {'date_created': '2020-11-06T20:17:17.454000Z'},
+                "tasks": {'date_updated': '2018-01-17T13:45:25.125000Z'},
+                'users': {'date_updated': '2019-10-10T03:23:15.466000Z'}}}
 
     @staticmethod
     def name():
         return "tt_closeio_bookmark"
 
     def streams_to_test(self):
-        streams_to_exclude = {'event_log', 'activities'}
-        return set(self.expected_metadata().keys()) - streams_to_exclude
+        # TODO - are there no records for the event_log stream?
+        # return {'tasks'}
+        return self.expected_stream_names().difference({'event_log'})
 
-    def manipulate_state(self, old_state):
-        manipulated_state = {
-        'bookmarks': {
-            stream: { self.get_replication_key_for_stream(stream): self.bookmark_date}
-            for stream in old_state['bookmarks'].keys()
-            }
-          }
-        return manipulated_state
+    def test_first_sync_bookmark(self):
+        def bookmark_exceptions():
+            return self.expected_stream_names().difference({'event_log', 'activities'})
+        self.streams_to_test = bookmark_exceptions
+        super().test_first_sync_bookmark()
 
-    @unittest.skip("Does not apply")
-    def test_sync_2_bookmark_greater_than_sync_1(self):
-        """
-        This test is meant for taps where bookmark percision is fine enough to always get greater
-        bookmark values between syncs.  This tap uses bookmark values based on the last record
-        and does not get new data fast enough (or at all) to support this test.
-        """
-
-    # set default values for test in init
-    def __init__(self, test_run):
-        super().__init__(test_run)
-
-        #Hard coded bookmark_date as there are no active records
-        self.bookmark_date = '2018-01-25T00:00:00Z'
+    def test_second_sync_bookmark(self):
+        def bookmark_exceptions():
+            return self.expected_stream_names().difference({'event_log', 'activities'})
+        self.streams_to_test = bookmark_exceptions
+        super().test_second_sync_bookmark()
