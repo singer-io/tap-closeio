@@ -5,10 +5,10 @@ from tap_tester.base_suite_tests.bookmark_test import BookmarkTest
 class CloseioBookmarkTest(BookmarkTest, CloseioBase):
     """Closeio bookmark test implementation"""
 
-    BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
+    bookmark_format = "%Y-%m-%dT%H:%M:%S.%f+00:00"
 
     @staticmethod
-    def INITIAL_BOOKMARKS():
+    def initial_bookmarks():
         return {
             'bookmarks': {
                 'custom_fields': {'date_updated': '2016-07-07T14:22:04.624000Z'},
