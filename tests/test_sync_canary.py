@@ -14,10 +14,6 @@ class CloseioSyncCanaryTest(SyncCanaryTest, CloseioBase):
         # We have no test data for the event_log stream
         return self.expected_stream_names().difference({'event_log'})
 
-    # Override get_properties so we can change the start date
-    def get_properties(self, original: bool = True):
-        return super().get_properties(original=False)
-
     # update the start date for this test
     def setUp(self):
         self.start_date = '2018-01-28T00:00:00Z'

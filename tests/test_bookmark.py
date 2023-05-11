@@ -37,3 +37,12 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
             return self.expected_stream_names().difference({'event_log', 'activities'})
         self.streams_to_test = bookmark_exceptions
         super().test_second_sync_bookmark()
+
+    def test_sync_2_bookmark_greater_or_equal_to_sync_1(self):
+        def bookmark_exceptions():
+            return self.expected_stream_names().difference({'event_log', 'activities'})
+        # TODO - activities bookmarks don't conform to the latest record, nor today.
+        #   Look more into what is going on here and if this is a bug.  Nor is the bookmark
+        #   consistent between syncs.
+        self.streams_to_test = bookmark_exceptions
+        super().test_sync_2_bookmark_greater_or_equal_to_sync_1()

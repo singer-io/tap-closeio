@@ -17,9 +17,13 @@ class CloseioBase(BaseCase):
     Shared tap-specific methods (as needed).
     """
 
-    REPLICATION_KEY_FORMAT = "%Y-%m-%dT00:00:00.000000Z"
-    BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
-    PAGE_SIZE = 100000
+    # REPLICATION_KEY_FORMAT = "%Y-%m-%dT00:00:00.000000Z"
+    # BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
+    # PAGE_SIZE = 100000
+
+    # set the default start date which can be overridden in the tests,
+    # by setting the property or changing self.start_date in a test.
+    start_date ='2016-07-07T00:00:00Z'
 
     @staticmethod
     def tap_name():
@@ -31,21 +35,14 @@ class CloseioBase(BaseCase):
         """the expected url route ending"""
         return "platform.closeio"
 
-    def get_properties(self, original: bool = True):
+    def get_properties(self):
         """Configuration properties required for the tap."""
 
-        return_value = {
+        return {
             # added defualt value as there is no current activity
-            'start_date': '2015-03-25T00:00:00Z',  # '2018-03-25T00:00:00Z' for faster test runs
+            'start_date': self.start_date,  # '2018-03-25T00:00:00Z' for faster test runs
             'api_key': os.getenv('TAP_CLOSEIO_API_KEY')
         }
-
-        if original:
-            return return_value
-
-        if self.start_date:
-            return_value["start_date"] = self.start_date
-        return return_value
 
     @staticmethod
     def get_credentials():

@@ -17,20 +17,7 @@ class CloseioPaginationTest(PaginationTest, CloseioBase):
         return { 'activities', 'leads', 'tasks' }
 
     def streams_to_selected_fields(self):
-        return {
-            "leads": {
-                "date_created",
-                "contacts",
-            },
-            "activities": {
-                "date_created",
-                "user_name",
-            },
-            "tasks": {
-                "date_created",
-                "name",
-            },
-        }
+        return dict()
 
     def get_page_limit_for_stream(self, stream):
         return self.PAGE_SIZE
