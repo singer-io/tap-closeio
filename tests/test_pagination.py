@@ -1,12 +1,11 @@
-import os
 from tap_tester.base_suite_tests.pagination_test import PaginationTest
 from base import CloseioBase
+
 
 class CloseioPaginationTest(PaginationTest, CloseioBase):
     """Closeio pagination test implementation """
 
-    #tdl-22959 - Match with the per_page limit in tap-closeio/tap_closeio/http.py
-    PAGE_SIZE=100
+    start_date = '2016-07-01T00:00:00Z'
 
     @staticmethod
     def name():
@@ -14,14 +13,10 @@ class CloseioPaginationTest(PaginationTest, CloseioBase):
 
     #Include the other streams that have records
     def streams_to_test(self):
-        return { 'activities', 'leads', 'tasks' }
-
-    def streams_to_selected_fields(self):
-        return dict()
-
-    def get_page_limit_for_stream(self, stream):
-        return self.PAGE_SIZE
-
-    def __init__(self, test_run):
-        super().__init__(test_run)
-        self.start_date='2015-03-25T00:00:00Z'
+        # there is not enough data for any of these streams to paginate
+        # activities and event_log use a different pagination scheme than the other streams
+        # All other streams have standard pagination of 100 records per page.
+        return self.expected_stream_names().difference({
+            'custom_fields',
+            'users',
+            'event_log'})

@@ -58,6 +58,7 @@ class CloseioBase(BaseCase):
             BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
             BaseCase.REPLICATION_KEYS: {"date_updated"},
             BaseCase.RESPECTS_START_DATE: True,
+            BaseCase.API_LIMIT: 100
         }
 
         return {
@@ -66,7 +67,10 @@ class CloseioBase(BaseCase):
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
                 BaseCase.REPLICATION_KEYS: {"date_created"},
                 BaseCase.RESPECTS_START_DATE: True,
-                BaseCase.LOOK_BACK_WINDOW: timedelta(hours=24)
+                BaseCase.LOOK_BACK_WINDOW: timedelta(hours=24),
+                # date_window request default 15 days.
+                # Make sure start date is before the date_window
+                BaseCase.API_LIMIT: 100
             },
             'custom_fields': default_expectations,
             'event_log': default_expectations,
@@ -301,8 +305,8 @@ class CloseioBase(BaseCase):
         }
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass(logging="Ensuring environment variables are sourced.")
+    def setUpClass(cls, logging="Ensuring environment variables are sourced."):
+        super().setUpClass(logging=logging)
         missing_envs = [
             x for x in [
                 'TAP_CLOSEIO_API_KEY', 
@@ -310,19 +314,4 @@ class CloseioBase(BaseCase):
         ]
 
         if len(missing_envs) != 0:
-            raise Exception("Missing environment variables: {}".format(missing_envs))
-
-    ##########################################################################
-    # Tap Specific Methods
-    ##########################################################################
-
-    # TODO refactor the below method to address the attribution window issue for activites stream
-    # def get_sync_start_time(self, stream, bookmark):
-    #     """
-    #     Calculates the sync start time, with respect to the lookback window
-    #     """
-    #     conversion_day = dt.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None) - timedelta(days=self.lookback_window)
-    #     bookmark_datetime = dt.strptime(bookmark, self.BOOKMARK_FORMAT)
-    #     start_date_datetime = dt.strptime(self.start_date, self.START_DATE_FORMAT)
-    #     return  min(bookmark_datetime, max(start_date_datetime, conversion_day))
-
+            raise ValueError(f"Missing environment variables: {missing_envs}")
