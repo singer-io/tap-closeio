@@ -4,6 +4,7 @@ from base import CloseioBase
 
 class CloseioPaginationTest(PaginationTest, CloseioBase):
     """Closeio pagination test implementation """
+
     #tdl-22959 - Match with the per_page limit in tap-closeio/tap_closeio/http.py
     PAGE_SIZE=100
 
