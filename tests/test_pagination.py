@@ -4,20 +4,30 @@ from base import CloseioBase
 
 class CloseioPaginationTest(PaginationTest, CloseioBase):
     """Closeio pagination test implementation """
-    PAGE_SIZE=1000
+    #tdl-22959 - Match with the per_page limit in tap-closeio/tap_closeio/http.py
+    PAGE_SIZE=100
 
     @staticmethod
     def name():
         return "tt_closeio_pagination"
 
+    #Include the other streams that have records
     def streams_to_test(self):
-        return { 'leads' }
+        return { 'activities', 'leads', 'tasks' }
 
     def streams_to_selected_fields(self):
         return {
             "leads": {
                 "date_created",
                 "contacts",
+            },
+            "activities": {
+                "date_created",
+                "user_name",
+            },
+            "tasks": {
+                "date_created",
+                "name",
             },
         }
 
