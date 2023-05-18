@@ -15,6 +15,6 @@ class CloseioSyncCanaryTest(SyncCanaryTest, CloseioBase):
         return self.expected_stream_names().difference({'event_log'})
 
     # update the start date for this test
-    def setUp(self):
+    def setUp(self):  # pylint: disable=invalid-name
         self.start_date = '2018-01-28T00:00:00Z'
         super().setUp()

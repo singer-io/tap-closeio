@@ -1,4 +1,3 @@
-from tap_tester import menagerie, connections
 from tap_tester.base_suite_tests.discovery_test import DiscoveryTest
 
 from base import CloseioBase
@@ -6,6 +5,8 @@ from base import CloseioBase
 
 class CloseioDiscoveryTest(DiscoveryTest, CloseioBase):
     """Standard Discovery Test"""
+
+    expected_replication_keys = CloseioBase.expected_replication_keys
 
     @staticmethod
     def name():

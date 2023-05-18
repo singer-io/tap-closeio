@@ -9,6 +9,8 @@ from base import CloseioBase
 class CloseioAllFieldsTest(AllFieldsTest, CloseioBase):
     """Test that with no fields selected for a stream automatic fields are still replicated"""
 
+    selected_fields = AllFieldsTest.selected_fields
+
     @staticmethod
     def name():
         return "tt_closeio_all_fields_test"

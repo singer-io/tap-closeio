@@ -29,13 +29,15 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
     def test_first_sync_bookmark(self):
         def bookmark_exceptions():
             return self.expected_stream_names().difference({'event_log', 'activities'})
-        self.streams_to_test = bookmark_exceptions
+        # hide and override streams to test for this test.
+        self.streams_to_test = bookmark_exceptions  # pylint: disable=method-hidden
         super().test_first_sync_bookmark()
 
     def test_second_sync_bookmark(self):
         def bookmark_exceptions():
             return self.expected_stream_names().difference({'event_log', 'activities'})
-        self.streams_to_test = bookmark_exceptions
+        # hide and override streams to test for this test.
+        self.streams_to_test = bookmark_exceptions  # pylint: disable=method-hidden
         super().test_second_sync_bookmark()
 
     def test_sync_2_bookmark_greater_or_equal_to_sync_1(self):

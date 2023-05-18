@@ -305,7 +305,7 @@ class CloseioBase(BaseCase):
         }
 
     @classmethod
-    def setUpClass(cls, logging="Ensuring environment variables are sourced."):
+    def setUpClass(cls, logging="Ensuring environment variables are sourced."):  # pylint: disable=invalid-name
         super().setUpClass(logging=logging)
         missing_envs = [
             x for x in [
