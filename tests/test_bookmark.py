@@ -6,10 +6,7 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
     """Closeio bookmark test implementation"""
 
     bookmark_format = "%Y-%m-%dT%H:%M:%S.%f+00:00"
-
-    @staticmethod
-    def initial_bookmarks():
-        return {
+    initial_bookmarks = {
             'bookmarks': {
                 'custom_fields': {'date_updated': '2016-07-07T14:22:04.624000Z'},
                 'leads': {'date_updated': '2020-05-06T18:54:08.250000Z'},
