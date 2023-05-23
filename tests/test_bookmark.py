@@ -54,6 +54,7 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
         super().test_bookmark_format()
 
     def test_bookmark_format_activities(self):
+        # TODO - why is this bookmark different than all other bookmark formats?
         self.streams_to_test = lambda : {'activities'}
         self.bookmark_format = "%Y-%m-%dT%H:%M:%S+00:00"
         BookmarkTest.test_bookmark_format(self)
