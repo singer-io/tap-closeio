@@ -80,8 +80,9 @@ class CloseioBase(BaseCase):
         }
 
     @staticmethod
-    def expected_automatic_fields():
-        return {
+    def expected_automatic_fields(stream=None):
+
+        automatic_fields = {
             'activities': {
                 '_type',
                 # 'activity_at',
@@ -303,6 +304,9 @@ class CloseioBase(BaseCase):
                 'organizations',
             },
         }
+        if stream:
+            return automatic_fields[stream]
+        return automatic_fields
 
     @classmethod
     def setUpClass(cls, logging="Ensuring environment variables are sourced."):  # pylint: disable=invalid-name

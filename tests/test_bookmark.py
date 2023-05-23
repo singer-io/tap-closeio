@@ -45,3 +45,15 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
         #   consistent between syncs.
         self.streams_to_test = bookmark_exceptions
         super().test_sync_2_bookmark_greater_or_equal_to_sync_1()
+
+    def test_bookmark_format(self):
+        def bookmark_exceptions():
+            return self.expected_stream_names().difference({'event_log', 'activities'})
+        # hide and override streams to test for this test.
+        self.streams_to_test = bookmark_exceptions  # pylint: disable=method-hidden
+        super().test_bookmark_format()
+
+    def test_bookmark_format_activities(self):
+        self.streams_to_test = lambda : {'activities'}
+        self.bookmark_format = "%Y-%m-%dT%H:%M:%S+00:00"
+        BookmarkTest.test_bookmark_format(self)

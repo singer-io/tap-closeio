@@ -21,7 +21,7 @@ class CloseioMinimumSelectionTest(MinimumSelectionTest, CloseioBase):
         # TODO - BUG it looks like there is no metadata for some fields even though they
         #   are actually replicated.  This isn't right.  Maybe it doesn't matter too much
         #   since everything is automatic but we should write this up.
-        def too_many_fields_replicated():
+        def too_many_fields_replicated(stream=None):
             actual_expected = CloseioBase.expected_automatic_fields()
             extra_fields = {
                 "users": {'google_profile_image_url', 'email_verified_at'},
@@ -96,6 +96,8 @@ class CloseioMinimumSelectionTest(MinimumSelectionTest, CloseioBase):
                     extra_fields.get(stream, set())).difference(
                     missing_fields.get(stream, set()))
                 for stream, fields in actual_expected.items()}
-            return additional_expected
+            if not stream:
+                return additional_expected
+            return additional_expected[stream]
         self.expected_automatic_fields = too_many_fields_replicated
         super().test_only_automatic_fields_replicated()
