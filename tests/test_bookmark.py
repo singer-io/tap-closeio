@@ -10,7 +10,7 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
             'bookmarks': {
                 'custom_fields': {'date_updated': '2016-07-07T14:22:04.624000Z'},
                 'leads': {'date_updated': '2020-05-06T18:54:08.250000Z'},
-                'activities': {'date_created': '2020-11-06T20:17:17.454000Z'},
+                'activities': {'date_created': '2020-11-06T20:17:17Z'},
                 "tasks": {'date_updated': '2018-01-17T13:45:25.125000Z'},
                 'users': {'date_updated': '2019-10-10T03:23:15.466000Z'}}}
 
