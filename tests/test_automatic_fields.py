@@ -18,5 +18,5 @@ class CloseioMinimumSelectionTest(MinimumSelectionTest, CloseioBase):
         return self.expected_stream_names().difference({'event_log'})
 
     def test_only_automatic_fields_replicated(self):
-        self.expected_automatic_fields = self.too_many_fields_replicated()
+        self.expected_automatic_fields = self.too_many_fields_replicated
         super().test_only_automatic_fields_replicated()

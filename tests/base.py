@@ -311,12 +311,12 @@ class CloseioBase(BaseCase):
     # TODO - BUG it looks like there is no metadata for some fields even though they
     #   are actually replicated.  This isn't right.  Maybe it doesn't matter too much
     #   since everything is automatic but we should write this up.
-    def too_many_fields_replicated(self):
+    def too_many_fields_replicated(self, stream=None):
         # NOTE: This only works because all fields are automatic.
         # Otherwise I think we would need to write a workaround to change the
         # selected fields for the test with streams_to_selected_fields
 
-        actual_expected = self.expected_automatic_fields()
+        actual_expected = CloseioBase.expected_automatic_fields()
         extra_fields = {
             "users": {'google_profile_image_url', 'email_verified_at'},
             "custom_fields": {
@@ -390,6 +390,8 @@ class CloseioBase(BaseCase):
                 extra_fields.get(stream, set())).difference(
                 missing_fields.get(stream, set()))
             for stream, fields in actual_expected.items()}
+        if stream:
+            return additional_expected[stream]
         return additional_expected
 
     @classmethod
