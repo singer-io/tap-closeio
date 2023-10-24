@@ -3,10 +3,8 @@ Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
 import os
-from datetime import datetime as dt
 from datetime import timedelta
 
-from tap_tester import connections, menagerie, runner, LOGGER
 from tap_tester.base_suite_tests.base_case import BaseCase
 
 
@@ -19,65 +17,60 @@ class CloseioBase(BaseCase):
     Shared tap-specific methods (as needed).
     """
 
+    # REPLICATION_KEY_FORMAT = "%Y-%m-%dT00:00:00.000000Z"
+    # BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
+    # PAGE_SIZE = 100000
 
-    REPLICATION_KEY_FORMAT = "%Y-%m-%dT00:00:00.000000Z"
-    BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%S.%f+00:00"
-    PAGE_SIZE = 100000
-    start_date = ""
-
+    # set the default start date which can be overridden in the tests,
+    # by setting the property or changing self.start_date in a test.
+    start_date ='2016-07-07T00:00:00Z'
 
     @staticmethod
     def tap_name():
         """The name of the tap"""
         return "tap-closeio"
 
-
     @staticmethod
     def get_type():
         """the expected url route ending"""
         return "platform.closeio"
 
-
-    def get_properties(self, original: bool = True):
+    def get_properties(self):
         """Configuration properties required for the tap."""
 
-        return_value = {
+        return {
             # added defualt value as there is no current activity
-            'start_date':'2015-03-25T00:00:00Z', # '2018-03-25T00:00:00Z' for faster test runs
-             'api_key':os.getenv('TAP_CLOSEIO_API_KEY'),
-
+            'start_date': self.start_date,  # '2018-03-25T00:00:00Z' for faster test runs
+            'api_key': os.getenv('TAP_CLOSEIO_API_KEY')
         }
-
-        if original:
-            return return_value
-
-        if self.start_date:
-            return_value["start_date"] = self.start_date
-        return return_value
-
 
     @staticmethod
     def get_credentials():
         return {
-            'api_key':os.getenv('TAP_CLOSEIO_API_KEY'),
+            'api_key': os.getenv('TAP_CLOSEIO_API_KEY'),
         }
 
-
-    def expected_metadata(self):
+    @staticmethod
+    def expected_metadata():
         """The expected streams and metadata about the streams"""
         default_expectations = {
-            self.PRIMARY_KEYS: {"id"},
-            self.REPLICATION_METHOD: self.INCREMENTAL,
-            self.REPLICATION_KEYS: {"date_updated"},
-            self.RESPECTS_START_DATE: True,
+            BaseCase.PRIMARY_KEYS: {"id"},
+            BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
+            BaseCase.REPLICATION_KEYS: {"date_updated"},
+            BaseCase.RESPECTS_START_DATE: True,
+            BaseCase.API_LIMIT: 100
         }
 
         return {
             'activities': {
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-                self.REPLICATION_KEYS: {"date_created"},
-                self.RESPECTS_START_DATE: True,
+                BaseCase.PRIMARY_KEYS: {"id"},
+                BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
+                BaseCase.REPLICATION_KEYS: {"date_created"},
+                BaseCase.RESPECTS_START_DATE: True,
+                BaseCase.LOOK_BACK_WINDOW: timedelta(hours=24),
+                # date_window request default 15 days.
+                # Make sure start date is before the date_window
+                BaseCase.API_LIMIT: 100
             },
             'custom_fields': default_expectations,
             'event_log': default_expectations,
@@ -86,194 +79,324 @@ class CloseioBase(BaseCase):
             'users': default_expectations
         }
 
-    def expected_automatic_fields(self):
-        auto_fields ={
-            'activities': {
-                    'need_smtp_credentials',
-                    'cc',
-                    'send_attempts',
-                    'date_sent',
-                    'envelope',
-                    'references',
-                    'updated_by',
-                    'id',
-                    'direction',
-                    'user_id',
-                    'subject',
-                    'template_name',
-                    'body_html',
-                    'status',
-                    'opens',
-                    'thread_id',
-                    'lead_id',
-                    'users',
-                    'attachments',
-                    'body_text_quoted',
-                    'to',
-                    'created_by_name',
-                    'body_html_quoted',
-                    'in_reply_to_id',
-                    'body_preview',
-                    'email_account_id',
-                    'date_scheduled',
-                    'template_id',
-                    'user_name',
-                    'date_created',
-                    'date_updated',
-                    'created_by',
-                    'organization_id',
-                    'body_text',
-                    'opens_summary',
-                    '_type',
-                    'sender',
-                    'updated_by_name',
-                    'bcc',
-                    'message_ids',
-                    'contact_id',
-                    'new_status_label',
-                    'task_id',
-                    'new_status_id',
-                    'opportunity_date_won',
-                    'opportunity_value_currency',
-                    'transferred_from',
-                    'task_assigned_to',
-                    'source',
-                    'task_text',
-                    'new_status_type',
-                    'voicemail_url',
-                    'opportunity_confidence',
-                    'task_assigned_to_name',
-                    'note',
-                    'import_id',
-                    'opportunity_value_formatted',
-                    'opportunity_value_period',
-                    'voicemail_duration',
-                    'recording_url',
-                    'old_status_label',
-                    'opportunity_id',
-                    'local_phone',
-                    'old_status_id',
-                    'old_status_type',
-                    'opportunity_value',
-                    'duration',
-                    'dialer_id',
-                    'remote_phone',
-                    'transferred_to',
-                    'phone',
-                },
-    'custom_fields': {
-                    'date_created',
-                    'date_updated',
-                    'editable_with_roles',
-                    'id',
-                    'organization_id',
-                    'name',
-                    'choices',
-                    'created_by',
-                    'type',
-                    'updated_by',
-                },
-            'event_log': {
-                    'date_updated',
-                    'id',
-                    'previous_data',
-                    'date_created',
-                    'user_id',
-                    'data',
-                    'lead_id',
-                    'action',
-                    'object_id',
-                    'organization_id',
-                    'request_id',
-                    'meta',
-                    'changed_fields',
-                    'object_type',
-                },
-            'leads': {
-                    'date_updated',
-                    'display_name',
-                    'addresses',
-                    'date_created',
-                    'id',
-                    'status_id',
-                    'opportunities',
-                    'organization_id',
-                    'name',
-                    'tasks',
-                    'created_by',
-                    'status_label',
-                    'integration_links',
-                    'contacts',
-                    'custom_fields',
-                    'url',
-                    'html_url',
-                    'description',
-                    'updated_by_name',
-                    'created_by_name',
-                    'updated_by',
-                },
-            'tasks': {
-                    'date_created',
-                    'date_updated',
-                    'id',
-                    'is_complete',
-                    'phone',
-                    'local_phone',
-                    'voicemail_url',
-                    'organization_id',
-                    '_type',
-                    'date',
-                    'voicemail_duration',
-                    'opportunity_value_currency',
-                    'contact_name',
-                    'body_preview',
-                    'phone_number_description',
-                    'text',
-                    'opportunity_note',
-                    'due_date',
-                    'updated_by',
-                    'opportunity_value',
-                    'email_id',
-                    'remote_phone',
-                    'created_by',
-                    'view',
-                    'object_type',
-                    'subject',
-                    'remote_phone_description',
-                    'contact_id',
-                    'emails',
-                    'lead_id',
-                    'recording_url',
-                    'remote_phone_formatted',
-                    'assigned_to',
-                    'is_dateless',
-                    'object_id',
-                    'opportunity_value_formatted',
-                    'updated_by_name',
-                    'phone_formatted',
-                    'created_by_name',
-                    'lead_name',
-                    'assigned_to_name',
-                    'opportunity_value_period',
-                },
-            'users': {
-                    'date_updated',
-                    'id',
-                    'last_name',
-                    'date_created',
-                    'organizations',
-                    'email',
-                    'first_name',
-                    'image',
-                    'last_used_timezone',
-                },
-        }
-        return auto_fields
+    @staticmethod
+    def expected_automatic_fields(stream=None):
 
+        automatic_fields = {
+            'activities': {
+                '_type',
+                # 'activity_at',
+                'attachments',
+                'bcc',
+                'body_html',
+                'body_html_quoted',
+                'body_preview',
+                'body_text',
+                'body_text_quoted',
+                # 'bulk_email_action_id',
+                # 'call_method',
+                'cc',
+                # 'coach_legs',
+                'contact_id',
+                # 'cost',
+                'created_by',
+                'created_by_name',
+                # 'date_answered',
+                'date_created',
+                'date_scheduled',
+                'date_sent',
+                'date_updated',
+                'dialer_id',
+                # 'dialer_saved_search_id',
+                'direction',
+                # 'disposition',
+                'duration',
+                'email_account_id',
+                'envelope',
+                # 'error_message',
+                # 'followup_sequence_delay',
+                # 'followup_sequence_id',
+                # 'forwarded_to',
+                # 'has_recording',
+                # 'has_reply',
+                'id',
+                'import_id',
+                'in_reply_to_id',
+                # 'is_forwarded',
+                # 'is_joinable',
+                # 'is_to_group_number',
+                'lead_id',
+                # 'local_country_iso',
+                'local_phone',
+                # 'local_phone_formatted',
+                'message_ids',
+                'need_smtp_credentials',
+                # 'new_pipeline_id',
+                # 'new_pipeline_name',
+                'new_status_id',
+                'new_status_label',
+                'new_status_type',
+                'note',
+                # 'note_html',
+                # 'old_pipeline_id',
+                # 'old_pipeline_name',
+                'old_status_id',
+                'old_status_label',
+                'old_status_type',
+                'opens',
+                'opens_summary',
+                'opportunity_confidence',
+                'opportunity_date_won',
+                'opportunity_id',
+                'opportunity_value',
+                'opportunity_value_currency',
+                'opportunity_value_formatted',
+                'opportunity_value_period',
+                'organization_id',
+                'phone',
+                # 'recording_expires_at',
+                'recording_url',
+                'references',
+                # 'remote_country_iso',
+                'remote_phone',
+                # 'remote_phone_formatted',
+                # 'send_as_id',
+                'send_attempts',
+                'sender',
+                # 'sequence_id',
+                # 'sequence_name',
+                # 'sequence_subscription_id',
+                'source',
+                'status',
+                'subject',
+                'task_assigned_to',
+                'task_assigned_to_name',
+                'task_id',
+                'task_text',
+                'template_id',
+                'template_name',
+                # 'text',
+                'thread_id',
+                'to',
+                'transferred_from',
+                # 'transferred_from_user_id',
+                'transferred_to',
+                # 'transferred_to_user_id',
+                'updated_by',
+                'updated_by_name',
+                'user_id',
+                'user_name',
+                'users',
+                'voicemail_duration',
+                'voicemail_url',
+            },
+            'custom_fields': {
+                # 'accepts_multiple_values',
+                # 'back_reference_is_visible',
+                'choices',
+                'created_by',
+                'date_created',
+                'date_updated',
+                # 'description',
+                'editable_with_roles',
+                'id',
+                # 'is_shared',
+                'name',
+                'organization_id',
+                # 'referenced_custom_type_id',
+                'type',
+                'updated_by',
+            },
+            'event_log': {
+                'action',
+                'changed_fields',
+                'data',
+                'date_created',
+                'date_updated',
+                'id',
+                'lead_id',
+                'meta',
+                'object_id',
+                'object_type',
+                'organization_id',
+                'previous_data',
+                'request_id',
+                'user_id',
+            },
+            'leads': {
+                'date_updated',
+                'display_name',
+                'addresses',
+                'date_created',
+                'id',
+                'status_id',
+                'opportunities',
+                'organization_id',
+                'name',
+                'tasks',
+                'created_by',
+                'status_label',
+                'integration_links',
+                'contacts',
+                'custom_fields',
+                'url',
+                'html_url',
+                'description',
+                'updated_by_name',
+                'created_by_name',
+                'updated_by',
+            },
+            'tasks': {
+                '_type',
+                'assigned_to',
+                'assigned_to_name',
+                'body_preview',
+                'contact_id',
+                'contact_name',
+                'created_by',
+                'created_by_name',
+                'date',
+                'date_created',
+                'date_updated',
+                'due_date',
+                'email_id',
+                'emails',
+                'id',
+                'is_complete',
+                'is_dateless',
+                'lead_id',
+                'lead_name',
+                'local_phone',
+                'object_id',
+                'object_type',
+                'opportunity_note',
+                'opportunity_value',
+                'opportunity_value_currency',
+                'opportunity_value_formatted',
+                'opportunity_value_period',
+                'organization_id',
+                'phone',
+                'phone_formatted',
+                'phone_number_description',
+                'recording_url',
+                'remote_phone',
+                'remote_phone_description',
+                'remote_phone_formatted',
+                'subject',
+                'text',
+                'updated_by',
+                'updated_by_name',
+                'view',
+                'voicemail_duration',
+                'voicemail_url',
+            },
+            'users': {
+                'date_created',
+                'date_updated',
+                'email',
+                # 'email_verified_at',
+                'first_name',
+                # 'google_profile_image_url',
+                'id',
+                'image',
+                'last_name',
+                'last_used_timezone',
+                'organizations',
+            },
+        }
+        if stream:
+            return automatic_fields[stream]
+        return automatic_fields
+
+    # TODO - BUG it looks like there is no metadata for some fields even though they
+    #   are actually replicated.  This isn't right.  Maybe it doesn't matter too much
+    #   since everything is automatic but we should write this up.
+    def too_many_fields_replicated(self, stream=None):
+        # NOTE: This only works because all fields are automatic.
+        # Otherwise I think we would need to write a workaround to change the
+        # selected fields for the test with streams_to_selected_fields
+
+        actual_expected = CloseioBase.expected_automatic_fields()
+        extra_fields = {
+            "users": {'google_profile_image_url', 'email_verified_at'},
+            "custom_fields": {
+                'accepts_multiple_values',
+                'back_reference_is_visible',
+                'description',
+                'is_shared',
+                'referenced_custom_type_id',
+            },
+            "activities": {
+                'activity_at',
+                'bulk_email_action_id',
+                'call_method',
+                'coach_legs',
+                'cost',
+                'date_answered',
+                'dialer_saved_search_id',
+                'disposition',
+                'error_message',
+                'followup_sequence_delay',
+                'followup_sequence_id',
+                'forwarded_to',
+                'has_recording',
+                'has_reply',
+                'is_forwarded',
+                'is_joinable',
+                'is_to_group_number',
+                'local_country_iso',
+                'local_phone_formatted',
+                'new_pipeline_id',
+                'new_pipeline_name',
+                'note_html',
+                'old_pipeline_id',
+                'old_pipeline_name',
+                'recording_expires_at',
+                'remote_country_iso',
+                'remote_phone_formatted',
+                'send_as_id',
+                'sequence_id',
+                'sequence_name',
+                'sequence_subscription_id',
+                'text',
+                'transferred_from_user_id',
+                'transferred_to_user_id',
+            },
+        }
+        missing_fields = {
+            "tasks": {
+                'body_preview',
+                'email_id',
+                'emails',
+                'local_phone',
+                'opportunity_note',
+                'opportunity_value',
+                'opportunity_value_currency',
+                'opportunity_value_formatted',
+                'opportunity_value_period',
+                'phone',
+                'phone_formatted',
+                'phone_number_description',
+                'recording_url',
+                'remote_phone',
+                'remote_phone_description',
+                'remote_phone_formatted',
+                'subject',
+                'voicemail_duration',
+                'voicemail_url',
+            }}
+        additional_expected = {
+            stream: fields.union(
+                extra_fields.get(stream, set())).difference(
+                missing_fields.get(stream, set()))
+            for stream, fields in actual_expected.items()}
+        if stream:
+            return additional_expected[stream]
+        return additional_expected
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass(logging="Ensuring environment variables are sourced.")
+    def setUpClass(cls, logging="Ensuring environment variables are sourced."):  # pylint: disable=invalid-name
+        super().setUpClass(logging=logging)
         missing_envs = [
             x for x in [
                 'TAP_CLOSEIO_API_KEY', 
@@ -281,19 +404,4 @@ class CloseioBase(BaseCase):
         ]
 
         if len(missing_envs) != 0:
-            raise Exception("Missing environment variables: {}".format(missing_envs))
-
-
-    ##########################################################################
-    ### Tap Specific Methods
-    ##########################################################################
-    #TODO refactor the below method to address the attribution window issue for activites stream
-    # def get_sync_start_time(self, stream, bookmark):
-    #     """
-    #     Calculates the sync start time, with respect to the lookback window
-    #     """
-    #     conversion_day = dt.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None) - timedelta(days=self.lookback_window)
-    #     bookmark_datetime = dt.strptime(bookmark, self.BOOKMARK_FORMAT)
-    #     start_date_datetime = dt.strptime(self.start_date, self.START_DATE_FORMAT)
-    #     return  min(bookmark_datetime, max(start_date_datetime, conversion_day))
-
+            raise ValueError(f"Missing environment variables: {missing_envs}")
