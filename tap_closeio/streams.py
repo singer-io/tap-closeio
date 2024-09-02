@@ -170,8 +170,7 @@ def sync_activities(ctx):
 
     # Need this to preserve first bookmark in case of failure
     last_start_date = start_date
-    offset = [IDS.ACTIVITIES, "skip"]
-    last_skip = ctx.get_offset(offset) or 0
+    last_skip = ctx.get_offset([IDS.ACTIVITIES, "skip"]) or 0
 
     # 24 hours of activities essentially allows us to capture updates to
     # calls that are in progress _while_ an extraction is happening, no
@@ -180,7 +179,7 @@ def sync_activities(ctx):
 
     try:
         # get date window from config
-        original_date_window = float(ctx.config.get("date_window", 15))
+        original_date_window = ctx.get_offset([IDS.ACTIVITIES, "date_window"]) or float(ctx.config.get("date_window", 15))
        # if date_window is 0, '0' or None, then set default window size of 15 days
         if not original_date_window:
             LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
@@ -222,12 +221,14 @@ def sync_activities(ctx):
                     date_window = date_window/2
 
                     LOGGER.info(("Setting bookmark to `{}` and restarting pagination.".format(formatted_start_date)))
-                    last_skip = ctx.get_offset(offset) or 0
+                    last_skip = ctx.get_offset([IDS.ACTIVITIES, "skip"]) or 0
                     ctx.clear_offsets(IDS.ACTIVITIES)
+                    ctx.set_offset([IDS.ACTIVITIES, "date_window"], date_window)
                     ctx.set_bookmark(bookmark(IDS.ACTIVITIES), last_start_date.strftime("%Y-%m-%dT%H:%M:%S"))
                     continue
                 else:
-                    ctx.set_offset(offset, last_skip)
+                    ctx.set_offset([IDS.ACTIVITIES, "skip"], last_skip)
+                    ctx.set_offset([IDS.ACTIVITIES, "date_window"], date_window)
                     ctx.set_bookmark(bookmark(IDS.ACTIVITIES), last_start_date.strftime("%Y-%m-%dT%H:%M:%S"))
                     raise Exception("Failed to identify suitable date window to avoid max_skip error.") from ex
             raise ex
