@@ -167,6 +167,12 @@ def sync_leads(ctx):
 def sync_activities(ctx):
     start_date_str = ctx.update_start_date_bookmark(bookmark(IDS.ACTIVITIES))
     start_date = pendulum.parse(start_date_str)
+
+    # Need this to preserve first bookmark in case of failure
+    last_start_date = start_date
+    offset = [IDS.ACTIVITIES, "skip"]
+    last_skip = ctx.get_offset(offset) or 0
+
     # 24 hours of activities essentially allows us to capture updates to
     # calls that are in progress _while_ an extraction is happening, no
     # matter the replication frequency or call duration.
@@ -174,36 +180,58 @@ def sync_activities(ctx):
 
     try:
         # get date window from config
-        date_window = int(ctx.config.get("date_window", 15))
+        original_date_window = float(ctx.config.get("date_window", 15))
        # if date_window is 0, '0' or None, then set default window size of 15 days
-        if not date_window:
+        if not original_date_window:
             LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
-            date_window = 15
+            original_date_window = 15
     except ValueError:
         LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
         # In case of empty string(''), use default window
-        date_window = 15
+        original_date_window = 15
 
     LOGGER.info("Using offset seconds {}".format(offset_secs))
     start_date -= timedelta(seconds=offset_secs)
 
     window_start_date = start_date._datetime
     now = SYNC_START.replace(tzinfo=timezone.utc)
+    date_window = original_date_window
     while window_start_date <= now:
-        window_end_date = window_start_date + timedelta(days=date_window)
+        try:
+            window_end_date = window_start_date + timedelta(days=date_window)
 
+            # 'date_created__gt' and  'date_created__lt' has precision to the second
+            formatted_start_date = window_start_date.strftime("%Y-%m-%dT%H:%M:%S")
+            formatted_end_date = window_end_date.strftime("%Y-%m-%dT%H:%M:%S")
 
-        # 'date_created__gt' and  'date_created__lt' has precision to the second
-        formatted_start_date = window_start_date.strftime("%Y-%m-%dT%H:%M:%S")
-        formatted_end_date = window_end_date.strftime("%Y-%m-%dT%H:%M:%S")
+            LOGGER.info("Syncing data for date window: {}, {}".format(formatted_start_date, formatted_end_date))
 
-        LOGGER.info("Syncing data for date window: {}, {}".format(formatted_start_date, formatted_end_date))
+            params = {"date_created__gt": formatted_start_date, "date_created__lt": formatted_end_date}
+            request = create_request(IDS.ACTIVITIES, params=params)
+            paginated_sync(IDS.ACTIVITIES, ctx, request, formatted_start_date)
 
-        params = {"date_created__gt": formatted_start_date, "date_created__lt": formatted_end_date}
-        request = create_request(IDS.ACTIVITIES, params=params)
-        paginated_sync(IDS.ACTIVITIES, ctx, request, formatted_start_date)
+            window_start_date = window_end_date
+            last_start_date = window_start_date
 
-        window_start_date = window_end_date
+            # Reset the date window to configured value if `max_skip` exception occured in last iteration
+            date_window = original_date_window
+        except Exception as ex:
+            if "max_skip =" in str(ex):
+                if date_window > 0.1:
+                    LOGGER.warn(f"Hit max_skip error, reducing the date window size by half i.e. {date_window/2}")
+                    date_window = date_window/2
+
+                    LOGGER.info(("Setting bookmark to `{}` and restarting pagination.".format(formatted_start_date)))
+                    last_skip = ctx.get_offset(offset) or 0
+                    ctx.clear_offsets(IDS.ACTIVITIES)
+                    ctx.set_bookmark(bookmark(IDS.ACTIVITIES), last_start_date.strftime("%Y-%m-%dT%H:%M:%S"))
+                    continue
+                else:
+                    ctx.set_offset(offset, last_skip)
+                    ctx.set_bookmark(bookmark(IDS.ACTIVITIES), last_start_date.strftime("%Y-%m-%dT%H:%M:%S"))
+                    raise Exception("Failed to identify suitable date window to avoid max_skip error.") from ex
+            raise ex
+
 
 
 def sync_event_log(ctx):
