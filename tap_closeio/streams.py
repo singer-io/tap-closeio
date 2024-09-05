@@ -102,7 +102,14 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
                     page.next_skip))
                 LOGGER.info("Current Max Bookmark: `{}`".format(
                     max_bookmark))
-                ctx.write_state()
+
+                # Activities enpoint returns records in descending order because of which
+                # in case of interrupted sync writing max bookmark may result in missing
+                # records between last bookmark and max bookmark value so we are differing
+                # bookmark update in the state until extraction has completed.
+                if tap_stream_id != IDS.ACTIVITIES:
+                    ctx.write_state()
+            ctx.write_state()
             break
         except requests.Timeout as e:
             LOGGER.info("Request timed out after 5 seconds: stream={}, skip={}".format(
@@ -217,9 +224,8 @@ def sync_activities(ctx):
         except Exception as ex:
             if "max_skip =" in str(ex):
                 if date_window > 0.1:
-                    LOGGER.warn(f"Hit max_skip error, reducing the date window size by half i.e. {date_window/2}")
-                    date_window = date_window/2
-
+                    date_window = date_window/2 if date_window < 2 else 1
+                    LOGGER.warn(f"Hit max_skip error, reducing the date window size to {date_window}")
                     LOGGER.info(("Setting bookmark to `{}` and restarting pagination.".format(formatted_start_date)))
                     last_skip = ctx.get_offset([IDS.ACTIVITIES, "skip"]) or 0
                     ctx.clear_offsets(IDS.ACTIVITIES)
