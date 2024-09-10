@@ -55,6 +55,9 @@ class Client():
                 except:
                     message = "400 Response. Unable to determine cause."
                 raise Exception(message)
+            if resp.status_code == 404 and \
+                resp.json()['error'] == "Empty query: Document has been deleted.":
+                raise Exception(resp.json()['error'])
             resp.raise_for_status()
         json = resp.json()
         # if we're hitting the rate limit cap, sleep until the limit resets
@@ -81,12 +84,22 @@ def paginate(client, tap_stream_id, request, *, skip=0):
     request.params["_limit"] = PER_PAGE
     while True:
         request.params["_skip"] = skip
-        response = client.request_with_handling(tap_stream_id, request)
-        next_skip = skip + len(response["data"])
-        if 'total_results' in response:
-            LOGGER.info("Retrieved page from offset `{}` of total_results `{}`.".format(
-                skip, response['total_results']))
-        yield Page(response["data"], skip, next_skip)
-        if not response.get("has_more"):
-            break
+        try:
+            response = client.request_with_handling(tap_stream_id, request)
+            next_skip = skip + len(response["data"])
+            if 'total_results' in response:
+                LOGGER.info("Retrieved page from offset `{}` of total_results `{}`.".format(
+                    skip, response['total_results']))
+            yield Page(response["data"], skip, next_skip)
+            if not response.get("has_more"):
+                break
+        except Exception as ex:
+            # Some times we receive exception if document at offset index is deleted.
+            # In this case, we need to identify next non-empty document to continue pagination
+            # by incrementing skip count by 1
+            if 'Empty query: Document has been deleted.' == str(ex):
+                LOGGER.warn("Empty query: Document has been deleted for _skip={}.".format(skip))
+                next_skip = skip + 1
+            else:
+                raise ex
         skip = next_skip
