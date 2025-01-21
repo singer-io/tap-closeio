@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6.5
+  * Fix Dependabot issue [#41](https://github.com/singer-io/tap-closeio/pull/41)
+
 ## 1.6.4
   * Ensures future-dated bookmarks cannot be written to state. Adds corresponding unittests [#30](https://github.com/singer-io/tap-closeio/pull/30)
 
