@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6.5
+  * Bump dependency versions for twistlock compliance [#42](https://github.com/singer-io/tap-closeio/pull/42)
+
 ## 1.6.4
   * Ensures future-dated bookmarks cannot be written to state. Adds corresponding unittests [#30](https://github.com/singer-io/tap-closeio/pull/30)
 
