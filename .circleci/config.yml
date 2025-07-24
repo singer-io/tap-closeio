@@ -19,6 +19,7 @@ jobs:
             source /usr/local/share/virtualenvs/tap-closeio/bin/activate
             uv pip install -U pip setuptools
             uv pip install .[test]
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virtualenvs/dev_env.sh
       - slack/notify-on-failure:
           only_for_branches: main
