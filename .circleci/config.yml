@@ -29,6 +29,10 @@ jobs:
           paths:
             - tap-closeio
             - dev_env.sh
+      - persist_to_workspace:
+          root: /root/.local/share/uv/python/cpython-3.9.23-linux-x86_64-gnu/bin
+          paths:
+            - python3.9
 
   run_pylint:
     executor: docker-executor
@@ -36,6 +40,8 @@ jobs:
       - checkout
       - attach_workspace:
           at: /usr/local/share/virtualenvs
+      - attach_workspace:
+          at: /root/.local/share/uv/python/cpython-3.9.23-linux-x86_64-gnu/bin
       - run:
           name: 'pylint'
           command: |
