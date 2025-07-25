@@ -4,12 +4,11 @@ orbs:
 
 executors:
   docker-executor:
-    docker:
-      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester-uv
 
 jobs:
-  ensure_env:
-    executor: docker-executor
+  build:
+    docker:
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester-uv
     steps:
       - checkout
       - run:
@@ -19,29 +18,8 @@ jobs:
             source /usr/local/share/virtualenvs/tap-closeio/bin/activate
             uv pip install -U pip setuptools
             uv pip install .[test]
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            uv pip install --upgrade awscli
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virtualenvs/dev_env.sh
       - slack/notify-on-failure:
           only_for_branches: main
-      - persist_to_workspace:
-          root: /usr/local/share/virtualenvs
-          paths:
-            - tap-closeio
-            - dev_env.sh
-      - persist_to_workspace:
-          root: /root/.local/share/uv/python/cpython-3.9.23-linux-x86_64-gnu/bin
-          paths:
-            - python3.9
-
-  run_pylint:
-    executor: docker-executor
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
-      - attach_workspace:
-          at: /root/.local/share/uv/python/cpython-3.9.23-linux-x86_64-gnu/bin
       - run:
           name: 'pylint'
           command: |
@@ -51,18 +29,10 @@ jobs:
             # pylint tap_closeio --disable 'broad-except,broad-exception-caught,broad-exception-raised,chained-comparison,empty-docstring,fixme,invalid-name,line-too-long,missing-class-docstring,missing-function-docstring,missing-module-docstring,no-else-raise,no-else-return,too-few-public-methods,too-many-arguments,too-many-branches,too-many-lines,too-many-locals,ungrouped-imports,wrong-spelling-in-comment,wrong-spelling-in-docstring,missing-class-docstring'
       - slack/notify-on-failure:
           only_for_branches: main
-
-  run_unit_tests:
-    executor: docker-executor
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
       - run:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-closeio/bin/activate
-            source /usr/local/share/virtualenvs/dev_env.sh
             uv pip install pytest coverage
             coverage run -m pytest tests/unittests
             coverage html
@@ -75,22 +45,16 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             stitch-validate-json tap_closeio/schemas/*.json
-
-  run_integration_tests:
-    executor: docker-executor
-    parallelism: 5
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
       - run:
           name: 'Run Integration Tests'
           no_output_timeout: 30m
           command: |
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            uv pip install --upgrade awscli
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virtualenvs/dev_env.sh
             source /usr/local/share/virtualenvs/dev_env.sh
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
             circleci tests glob "tests/test_*.py" | circleci tests split > ./tests-to-run
             if [ -s ./tests-to-run ]; then
               for test_file in $(cat ./tests-to-run)
@@ -104,45 +68,14 @@ jobs:
       - store_artifacts:
           path: /tmp/tap-ga4
 
-  build:
-    executor: docker-executor
-    steps:
-      - run: echo "CI Done"
-
 workflows:
   version: 2
   commit:
-    jobs: &build_daily_jobs
-      - ensure_env:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-      - run_pylint:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          requires:
-            - ensure_env
-      - run_unit_tests:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          requires:
-            - ensure_env
-      - run_integration_tests:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          requires:
-            - ensure_env
+    jobs:
       - build:
           context:
             - circleci-user
             - tier-1-tap-user
-          requires:
-            - run_pylint
-            - run_unit_tests
-            - run_integration_tests
   build_daily:
     triggers:
       - schedule:
@@ -151,4 +84,8 @@ workflows:
             branches:
               only:
                 - master
-    jobs: *build_daily_jobs
+    jobs:
+      - build:
+          context:
+            - circleci-user
+            - tier-1-tap-user
