@@ -63,6 +63,28 @@ def format_dts(tap_stream_id, ctx, records):
     paths = ctx.schema_dt_paths[tap_stream_id]
     return transform_dts(records, paths, schema)
 
+def set_date_window(stream, ctx, offset_secs=0):
+    start_date_str = ctx.update_start_date_bookmark(bookmark(stream))
+    start_date = pendulum.parse(start_date_str)
+
+    try:
+        # get date window from config
+        date_window = int(ctx.config.get("date_window", 15))
+       # if date_window is 0, '0' or None, then set default window size of 15 days
+        if not date_window:
+            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
+            date_window = 15
+    except ValueError:
+        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
+        # In case of empty string(''), use default window
+        date_window = 15
+
+    start_date -= timedelta(seconds=offset_secs)
+
+    window_start_date = start_date._datetime
+    now = SYNC_START.replace(tzinfo=timezone.utc)
+    
+    return window_start_date, now, date_window
 
 def metrics(tap_stream_id, page):
     with singer.metrics.record_counter(tap_stream_id) as counter:
@@ -74,15 +96,16 @@ def write_records(tap_stream_id, page):
     metrics(tap_stream_id, page)
 
 
-def create_leads_request(ctx):
-    start_date = ctx.update_start_date_bookmark(bookmark(IDS.LEADS))
+def create_leads_request(ctx, window_start_date, window_end_date):
     # date_updated>= has precision to the minute
-    formatted_start = pendulum.parse(start_date).strftime("%Y-%m-%dT%H:%M")
-    query = 'date_updated>="{}" sort:date_updated'.format(formatted_start)
+    formatted_start = pendulum.parse(window_start_date).strftime("%Y-%m-%dT%H:%M")    
+    formatted_end = pendulum.parse(window_end_date).strftime("%Y-%m-%dT%H:%M")
+
+    query = 'date_updated>="{}" date_updated<"{}" sort:date_updated'.format(formatted_start, formatted_end)
     return create_request(IDS.LEADS, params={"query": query})
 
 
-def paginated_sync(tap_stream_id, ctx, request, start_date):
+def paginated_sync(tap_stream_id, ctx, request, start_date, end_date=None):
     _request = request
     bookmark_key = BOOK_KEYS[tap_stream_id]
     offset = [tap_stream_id, "skip"]
@@ -115,7 +138,7 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
             if IDS.LEADS != tap_stream_id:
                 _request = create_request(tap_stream_id)
             else:
-                _request = create_leads_request(ctx)
+                _request = create_leads_request(ctx, start_date, end_date)
             ctx.write_state()
         except Exception as e:
             # There may be streams other than `leads` that will run into
@@ -128,7 +151,7 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
                 skip = 0
                 ctx.clear_offsets(tap_stream_id)
                 ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)
-                _request = create_leads_request(ctx)
+                _request = create_leads_request(ctx, start_date, end_date)
                 ctx.write_state()
             else:
                 raise
@@ -159,36 +182,25 @@ def basic_paginator(tap_stream_id, ctx):
 
 
 def sync_leads(ctx):
-    request = create_leads_request(ctx)
-    start_date = ctx.update_start_date_bookmark(bookmark(IDS.LEADS))
-    paginated_sync(IDS.LEADS, ctx, request, start_date)
+    window_start_date, now, date_window = set_date_window(IDS.LEADS, ctx)
+    while window_start_date <= now:
+        window_end_date = window_start_date + timedelta(days=date_window)
+        formatted_start_date = window_start_date.strftime("%Y-%m-%dT%H:%M:%S")
+        formatted_end_date = window_end_date.strftime("%Y-%m-%dT%H:%M:%S")
+
+        LOGGER.info("Syncing data for date window: {}, {}".format(window_start_date, formatted_end_date))
+        request = create_leads_request(ctx, formatted_start_date, formatted_end_date)
+        paginated_sync(IDS.LEADS, ctx, request, formatted_start_date, end_date=formatted_end_date)
+
+        window_start_date = window_end_date
 
 
 def sync_activities(ctx):
-    start_date_str = ctx.update_start_date_bookmark(bookmark(IDS.ACTIVITIES))
-    start_date = pendulum.parse(start_date_str)
     # 24 hours of activities essentially allows us to capture updates to
     # calls that are in progress _while_ an extraction is happening, no
     # matter the replication frequency or call duration.
     offset_secs = ctx.config.get("activities_window_seconds", (60 * 60 * 24))
-
-    try:
-        # get date window from config
-        date_window = int(ctx.config.get("date_window", 15))
-       # if date_window is 0, '0' or None, then set default window size of 15 days
-        if not date_window:
-            LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
-            date_window = 15
-    except ValueError:
-        LOGGER.warning("Invalid value of date window is passed: \'{}\', using default window size of 15 days.".format(ctx.config.get("date_window")))
-        # In case of empty string(''), use default window
-        date_window = 15
-
-    LOGGER.info("Using offset seconds {}".format(offset_secs))
-    start_date -= timedelta(seconds=offset_secs)
-
-    window_start_date = start_date._datetime
-    now = SYNC_START.replace(tzinfo=timezone.utc)
+    window_start_date, now, date_window = set_date_window(IDS.ACTIVITIES, ctx, offset_secs)
     while window_start_date <= now:
         window_end_date = window_start_date + timedelta(days=date_window)
 
