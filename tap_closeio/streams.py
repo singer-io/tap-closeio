@@ -110,6 +110,9 @@ def paginated_sync(tap_stream_id, ctx, request, start_date, end_date=None):
     bookmark_key = BOOK_KEYS[tap_stream_id]
     offset = [tap_stream_id, "skip"]
     skip = ctx.get_offset(offset) or 0
+    if skip > 250000:
+        skip = 0
+
     max_bookmark = start_date
     formatter = FORMATTERS.get(tap_stream_id, (lambda x: x))
     while True:
