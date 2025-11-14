@@ -16,7 +16,7 @@ setup(name='tap-closeio',
     ],
     extras_require={
         "test": [
-            "pylint==2.13.7"
+            "pylint"
         ],
         "dev": [
             "ipdb==0.11"
