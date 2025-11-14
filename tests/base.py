@@ -23,7 +23,7 @@ class CloseioBase(BaseCase):
 
     # set the default start date which can be overridden in the tests,
     # by setting the property or changing self.start_date in a test.
-    start_date ='2016-07-07T00:00:00Z'
+    start_date ='2025-01-01T00:00:00Z'
 
     @staticmethod
     def tap_name():
@@ -40,7 +40,7 @@ class CloseioBase(BaseCase):
 
         return {
             # added defualt value as there is no current activity
-            'start_date': self.start_date,  # '2018-03-25T00:00:00Z' for faster test runs
+            'start_date': self.start_date,
             'api_key': os.getenv('TAP_CLOSEIO_API_KEY')
         }
 
@@ -321,49 +321,121 @@ class CloseioBase(BaseCase):
             "users": {'google_profile_image_url', 'email_verified_at'},
             "custom_fields": {
                 'accepts_multiple_values',
+                'always_visible',
                 'back_reference_is_visible',
                 'description',
+                'enrichment_enabled',
+                'enrichment_options',
                 'is_shared',
                 'referenced_custom_type_id',
             },
             "activities": {
-                'activity_at',
+                'actual_duration',
+                'ai_draft',
+                'attached_call_ids',
+                'attendees',
                 'bulk_email_action_id',
+                'calendar_event_link',
+                'calendar_event_uids',
                 'call_method',
                 'coach_legs',
+                'conference_links',
+                'connected_account_id',
+                'conversation_type_id',
+                'conversation_type_reason',
                 'cost',
+                'custom.cf_8IlUKjVfiLcT3ZJX8fWP94XcdxiMQZvU22IxY8vYnpW',
+                'custom.cf_9tRuvUAgsbDQ02Y0QL3CT9xPfOUr8j4lHHWQAJuOLuO',
+                'custom.cf_JsdvHhRrayY79gP8tuSDlWQ87S3WPtHQVL1PpIBBdo1',
+                'custom.cf_OlI9mSaHq0Rv0EwNmdkR5aWyI8EqisMGqaG30tVrCPW',
+                'custom.cf_TbbMa4iSD4OKmvBxA1uQVAkJVJ9OUZ90qnT9ZAJjLsV',
+                'custom.cf_TrMaKbanxqOf1X2fc4Dxv6cDsFTGzpU0KpeUQT1ynrV',
+                'custom.cf_ZBlvxzpXVOW0CImDkT160MhmGaDBxkSBFsYHGWGOcdv',
+                'custom.cf_amyosBnBNTPPtKsbXljkTZIWjMKYAtR7J8pzAMvCDms',
+                'custom.cf_edKq3t7Y9kDQc0LXm8kDYAO586ZQnLOo9V7rUAorSI4',
+                'custom.cf_fhJeFpGdFNvVAMN6LUWL88KkDaXEALGUVn0FSbD1BKP',
+                'custom.cf_iafWoEURcn0eppAL3idE8Q98kKOrnfKHahgGH7lxtYs',
+                'custom.cf_j3VnTuDXqvy8YWW6SSiRoIh2m2TDRjqjpht58E3VBE5',
+                'custom.cf_lWMcbFWBQIktqGIjloUgCEtLpuyiO8zoLVuez1ETuWS',
+                'custom.cf_m2BqZfUOJqnv4IwJyAm3Cfejl8PCSDpIS3AB1ScCEcr',
+                'custom.cf_olPu2n8O2Xk7xKdhiZByKdSlLU1suzFyvVleu3R05xV',
+                'custom.cf_tTfGynfrfIQNtuLsSKRPfShXlczTXEvEJdQNMYF8EHv',
+                'custom.cf_wezc0krMUYGKnxV6U90cbJ0fVu1xDDjcHDm2JbMcpbo',
+                'custom_activity_type_id',
                 'date_answered',
                 'dialer_saved_search_id',
                 'disposition',
+                'ends_at',
                 'error_message',
+                'followup_sequence_add_cc_bcc',
                 'followup_sequence_delay',
                 'followup_sequence_id',
                 'forwarded_to',
                 'has_recording',
                 'has_reply',
+                'integrations',
                 'is_forwarded',
                 'is_joinable',
+                'is_recurring',
                 'is_to_group_number',
+                'last_published_at',
                 'local_country_iso',
                 'local_phone_formatted',
+                'location',
+                'mentions',
+                'mentions_updated_at',
                 'new_pipeline_id',
                 'new_pipeline_name',
+                'note_date_updated',
                 'note_html',
+                'note_mentions',
+                'notetaker_id',
                 'old_pipeline_id',
                 'old_pipeline_name',
+                'outcome_autofill_confidence',
+                'outcome_autofill_reasoning',
+                'outcome_id',
+                'outcome_reason',
+                'parent_meeting_id',
+                'pinned_at',
+                'provider_calendar_event_id',
+                'provider_calendar_ids',
+                'provider_calendar_type',
+                'recording_duration',
                 'recording_expires_at',
+                'recording_history',
                 'remote_country_iso',
                 'remote_phone_formatted',
                 'send_as_id',
                 'sequence_id',
                 'sequence_name',
                 'sequence_subscription_id',
+                'starts_at',
+                'summary',
                 'text',
+                'title',
                 'transferred_from_user_id',
                 'transferred_to_user_id',
+                'user_note',
+                'user_note_date_updated',
+                'user_note_html',
+                'user_note_mentions',
+    'activity_at',
+            },
+            "tasks": {
+                'priority',
+                'resolution',
+                'deduplication_key',
+                'is_primary_lead_notification',
             },
         }
         missing_fields = {
+            "activities": {
+                'task_assigned_to',
+                'task_assigned_to_name',
+                'task_id',
+                'task_text',
+            },
             "tasks": {
                 'body_preview',
                 'email_id',
@@ -399,7 +471,7 @@ class CloseioBase(BaseCase):
         super().setUpClass(logging=logging)
         missing_envs = [
             x for x in [
-                'TAP_CLOSEIO_API_KEY', 
+                'TAP_CLOSEIO_API_KEY',
             ] if os.getenv(x) is None
         ]
 
