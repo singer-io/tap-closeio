@@ -85,8 +85,6 @@ def create_leads_request(ctx):
 def paginated_sync(tap_stream_id, ctx, request, start_date):
     _request = request
     bookmark_key = BOOK_KEYS[tap_stream_id]
-    offset = [tap_stream_id, "skip"]
-    skip = ctx.get_offset(offset) or 0
     max_bookmark = start_date
     formatter = FORMATTERS.get(tap_stream_id, (lambda x: x))
     while True:
@@ -96,7 +94,6 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
                 to_write = [rec for rec in records if rec[bookmark_key] >= start_date]
                 max_bookmark = new_max_bookmark(max_bookmark, records, bookmark_key)
                 write_records(tap_stream_id, to_write)
-                ctx.set_offset(offset, page.next_skip)
                 LOGGER.info("Current Bookmark and Offset: `{}`, `{}`".format(
                     ctx.get_bookmark(bookmark(tap_stream_id)),
                     page.next_skip))
@@ -105,12 +102,9 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
                 ctx.write_state()
             break
         except requests.Timeout as e:
-            LOGGER.info("Request timed out after 5 seconds: stream={}, skip={}".format(
-                tap_stream_id, ctx.get_offset(offset)))
             LOGGER.info("Setting bookmark to `{}` and restarting pagination.".format(
                 max_bookmark))
             skip = 0
-            ctx.clear_offsets(tap_stream_id)
             ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)
             if IDS.LEADS != tap_stream_id:
                 _request = create_request(tap_stream_id)
@@ -126,13 +120,11 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
                              "Setting bookmark to `{}` and restarting pagination.".format(
                                  max_bookmark)))
                 skip = 0
-                ctx.clear_offsets(tap_stream_id)
                 ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)
                 _request = create_leads_request(ctx)
                 ctx.write_state()
             else:
                 raise
-    ctx.clear_offsets(tap_stream_id)
     ctx.set_bookmark(bookmark(tap_stream_id), max_bookmark)
     ctx.write_state()
 

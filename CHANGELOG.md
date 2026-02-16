@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.0
+  * Updated `singer-python` version, removed usages of offset. [#43](https://github.com/singer-io/tap-closeio/pull/43)
+
 ## 1.6.5
   * Bump dependency versions for twistlock compliance [#42](https://github.com/singer-io/tap-closeio/pull/42)
 
