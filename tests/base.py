@@ -420,7 +420,7 @@ class CloseioBase(BaseCase):
                 'user_note_date_updated',
                 'user_note_html',
                 'user_note_mentions',
-    'activity_at',
+                'activity_at',
             },
             "tasks": {
                 'priority',
