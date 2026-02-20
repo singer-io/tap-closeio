@@ -14,6 +14,7 @@ class CloseioStartDateTest(StartDateTest, CloseioBase):
             'tasks',
             'custom_fields',
             'users',
+            'event_log',
         })
 
     @property
