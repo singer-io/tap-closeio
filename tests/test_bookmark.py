@@ -11,8 +11,11 @@ _ALWAYS_EXCLUDE = {'event_log', 'users'}
 #   leads         - API filters at minute precision; bookmark != max(date_updated) of written records
 #   custom_fields - paginated_sync tracks max_bookmark over all fetched records (incl. unwritten);
 #                   bookmark can exceed max(date_updated) of written records
-#   tasks         - API does not filter at second-level precision; stale records appear in sync 2;
-#                   paginated_sync also tracks max_bookmark over all fetched records
+#   tasks         - paginated_sync tracks max_bookmark over all fetched records (incl. unwritten);
+#                   bookmark can exceed max(date_updated) of written records (excluded from
+#                   test_first_sync_bookmark / test_second_sync_bookmark / test_first_vs_second_records
+#                   only; server-side date_updated__gte filtering is now applied so records DO respect
+#                   the bookmark in test_second_sync_records_respect_bookmark)
 
 
 class CloseioBookmarkTest(BookmarkTest, CloseioBase):
@@ -47,14 +50,14 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
         """
         new_bookmarks = {}
         replication_keys = self.expected_replication_keys()
-        for stream, records in BookmarkTest.synced_records_1.items():
+        for stream, records in self.synced_records_1.items():
             if self.expected_replication_methods.get(stream) != self.INCREMENTAL:
                 continue
             look_back = self.expected_lookback_window(stream)
             replication_key = next(iter(replication_keys[stream]))
             stream_id = self.get_stream_id(stream)
             bookmark_dt = self.parse_date(
-                self.get_bookmark_value(BookmarkTest.state_1, stream_id))
+                self.get_bookmark_value(self.state_1, stream_id))
 
             replication_values = sorted({
                 msg['data'][replication_key]
@@ -65,7 +68,7 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
 
             if len(replication_values) < 2:
                 # Not enough spread — keep the existing bookmark so sync 2 still runs
-                existing = self.get_bookmark_value(BookmarkTest.state_1, stream_id)
+                existing = self.get_bookmark_value(self.state_1, stream_id)
                 if existing:
                     new_bookmarks[stream_id] = {replication_key: existing}
             else:
@@ -91,6 +94,8 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
                 sync_1_records = [
                     r['data'] for r in self.synced_records_1.get(stream, {}).get('messages', [])
                     if r.get('action') == 'upsert']
+                if not sync_1_records:
+                    continue
                 max_value = max(self.parse_date(r[replication_key]) for r in sync_1_records)
                 self.assertEqual(max_value, self.parse_date(self.bookmark_values_1.get(stream)))
 
@@ -103,6 +108,8 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
                 sync_2_records = [
                     r['data'] for r in self.synced_records_2.get(stream, {}).get('messages', [])
                     if r.get('action') == 'upsert']
+                if not sync_2_records:
+                    continue
                 max_value = max(self.parse_date(r[replication_key]) for r in sync_2_records)
                 self.assertEqual(max_value, self.parse_date(self.bookmark_values_2.get(stream)))
 
@@ -116,7 +123,7 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
                     self.bookmark_values_1.get(stream))
 
     def test_second_sync_records_respect_bookmark(self):
-        for stream in self._streams(also_exclude={'tasks'}):
+        for stream in self._streams():
             with self.subTest(stream=stream):
                 if self.expected_replication_methods.get(stream) != self.INCREMENTAL:
                     continue

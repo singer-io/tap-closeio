@@ -158,6 +158,16 @@ def basic_paginator(tap_stream_id, ctx):
     paginated_sync(tap_stream_id, ctx, request, start_date)
 
 
+def sync_tasks(ctx):
+    start_date = ctx.update_start_date_bookmark(bookmark(IDS.TASKS))
+    # date_updated__gte filters at second-level precision on the server side,
+    # preventing stale records (before the bookmark) from being returned.
+    formatted_start = pendulum.parse(start_date).strftime("%Y-%m-%dT%H:%M:%S")
+    params = {"date_updated__gte": formatted_start, "_order_by": "date_updated"}
+    request = create_request(IDS.TASKS, params=params)
+    paginated_sync(IDS.TASKS, ctx, request, start_date)
+
+
 def sync_leads(ctx):
     request = create_leads_request(ctx)
     start_date = ctx.update_start_date_bookmark(bookmark(IDS.LEADS))
@@ -252,7 +262,7 @@ streams = [
     mk_basic_paginator(IDS.CUSTOM_FIELDS),
     Stream(IDS.LEADS, sync_leads),
     Stream(IDS.ACTIVITIES, sync_activities),
-    mk_basic_paginator(IDS.TASKS),
+    Stream(IDS.TASKS, sync_tasks),
     mk_basic_paginator(IDS.USERS),
     Stream(IDS.EVENT_LOG, sync_event_log),
 ]
