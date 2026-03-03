@@ -55,12 +55,15 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
             bookmark_dt = self.parse_date(
                 self.get_bookmark_value(self.state_1, stream_id))
 
-            replication_values = sorted({
-                msg['data'][replication_key]
-                for msg in records['messages']
-                if msg['action'] == 'upsert'
-                and self.parse_date(msg['data'][replication_key]) < bookmark_dt - look_back
-            })
+            replication_values = sorted(
+                {
+                    msg['data'][replication_key]
+                    for msg in records['messages']
+                    if msg['action'] == 'upsert'
+                    and self.parse_date(msg['data'][replication_key]) < bookmark_dt - look_back
+                },
+                key=lambda value: self.parse_date(value),
+            )
 
             if len(replication_values) < 2:
                 # Not enough spread — keep the existing bookmark so sync 2 still runs
