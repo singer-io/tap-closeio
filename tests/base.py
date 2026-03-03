@@ -58,7 +58,8 @@ class CloseioBase(BaseCase):
             BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
             BaseCase.REPLICATION_KEYS: {"date_updated"},
             BaseCase.RESPECTS_START_DATE: True,
-            BaseCase.API_LIMIT: 100
+            BaseCase.API_LIMIT: 100,
+            BaseCase.LOOK_BACK_WINDOW: timedelta(seconds=1),
         }
 
         return {
@@ -74,8 +75,14 @@ class CloseioBase(BaseCase):
             },
             'custom_fields': default_expectations,
             'event_log': default_expectations,
-            'leads': default_expectations,
-            'tasks': default_expectations,
+            'leads': {
+                **default_expectations,
+                BaseCase.LOOK_BACK_WINDOW: timedelta(seconds=15),
+            },
+            'tasks': {
+                **default_expectations,
+                BaseCase.LOOK_BACK_WINDOW: timedelta(seconds=15),
+            },
             'users': default_expectations
         }
 
@@ -85,6 +92,8 @@ class CloseioBase(BaseCase):
         automatic_fields = {
             'activities': {
                 '_type',
+                'agent_action_reason',
+                'agent_config_id',
                 # 'activity_at',
                 'attachments',
                 'bcc',
@@ -154,6 +163,7 @@ class CloseioBase(BaseCase):
                 'opportunity_value_period',
                 'organization_id',
                 'phone',
+                'pinned',
                 # 'recording_expires_at',
                 'recording_url',
                 'references',
@@ -421,12 +431,20 @@ class CloseioBase(BaseCase):
                 'user_note_html',
                 'user_note_mentions',
                 'activity_at',
+                'agent_config_id',
+                'pinned',
+                'agent_action_reason',
+                'playbook_id',
+                'playbook_reason',
             },
             "tasks": {
                 'priority',
                 'resolution',
                 'deduplication_key',
                 'is_primary_lead_notification',
+                'sequence_subscription_id',
+                'agent_config_id',
+                'sequence_id',
             },
         }
         missing_fields = {
