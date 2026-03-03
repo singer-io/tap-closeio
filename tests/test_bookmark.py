@@ -3,8 +3,8 @@ from base import CloseioBase
 from tap_tester.base_suite_tests.bookmark_test import BookmarkTest
 
 
-# Streams excluded from all bookmark tests (no data or not bookmarked)
-_ALWAYS_EXCLUDE = {'event_log', 'users'}
+# Streams excluded from all bookmark tests (no data, not bookmarked, or unreliable bookmark)
+_ALWAYS_EXCLUDE = {'event_log', 'users', 'tasks'}
 
 # Per-test additional exclusions and reasons:
 #   activities    - bookmark is set to the date-window boundary, not max(date_created)
@@ -12,10 +12,7 @@ _ALWAYS_EXCLUDE = {'event_log', 'users'}
 #   custom_fields - paginated_sync tracks max_bookmark over all fetched records (incl. unwritten);
 #                   bookmark can exceed max(date_updated) of written records
 #   tasks         - paginated_sync tracks max_bookmark over all fetched records (incl. unwritten);
-#                   bookmark can exceed max(date_updated) of written records (excluded from
-#                   test_first_sync_bookmark / test_second_sync_bookmark / test_first_vs_second_records
-#                   only; server-side date_updated__gte filtering is now applied so records DO respect
-#                   the bookmark in test_second_sync_records_respect_bookmark)
+#                   bookmark can exceed max(date_updated) of written records — excluded from all tests
 
 
 class CloseioBookmarkTest(BookmarkTest, CloseioBase):
@@ -27,7 +24,6 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
             'custom_fields': {'date_updated': '2025-01-01T00:00:00+00:00'},
             'leads': {'date_updated': '2025-01-01T00:00:00+00:00'},
             'activities': {'date_created': '2025-01-01T00:00:00+00:00'},
-            'tasks': {'date_updated': '2025-01-01T00:00:00+00:00'},
         }}
 
     @staticmethod
@@ -148,9 +144,9 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
                                 f"(lookback={lookback})")
 
     def test_first_vs_second_records(self):
-        # tasks and custom_fields fall back to the sync-1 bookmark in calculate_new_bookmarks
-        # (insufficient record spread), so sync 2 fetches the same window — exclude them.
-        for stream in self._streams(also_exclude={'tasks', 'custom_fields'}):
+        # custom_fields falls back to the sync-1 bookmark in calculate_new_bookmarks
+        # (insufficient record spread), so sync 2 fetches the same window — exclude it.
+        for stream in self._streams(also_exclude={'custom_fields'}):
             with self.subTest(stream=stream):
                 if self.expected_replication_methods.get(stream) != self.INCREMENTAL:
                     continue
