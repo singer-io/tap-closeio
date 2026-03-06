@@ -434,6 +434,8 @@ class CloseioBase(BaseCase):
                 'agent_config_id',
                 'pinned',
                 'agent_action_reason',
+                'playbook_id',
+                'playbook_reason',
             },
             "tasks": {
                 'priority',
