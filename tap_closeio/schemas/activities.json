@@ -812,24 +812,6 @@
           "string"
         ]
       }
-    },
-    "agent_config_id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "agent_action_reason": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "pinned": {
-      "type": [
-        "null",
-        "boolean"
-      ]
     }
   },
   "additionalProperties": true,
