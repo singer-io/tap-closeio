@@ -83,36 +83,38 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
     # the correct set directly and re-implement only the assertion logic.
     # -------------------------------------------------------------------------
 
+    def _set_test_streams(self, streams):
+        """Set BookmarkTest.test_streams and register cleanup to restore the original value."""
+        original = getattr(BookmarkTest, 'test_streams', None)
+        self.addCleanup(setattr, BookmarkTest, 'test_streams', original)
+        BookmarkTest.test_streams = streams
+
+    def _patch_streams_to_test(self, streams):
+        """Temporarily override streams_to_test() on this instance and restore on cleanup."""
+        original = self.streams_to_test
+        self.streams_to_test = lambda: streams  # pylint: disable=method-hidden
+        self.addCleanup(setattr, self, 'streams_to_test', original)
+
     def test_first_sync_bookmark(self):
-        BookmarkTest.test_streams = self._streams(also_exclude={'activities', 'leads', 'custom_fields'})
+        self._set_test_streams(self._streams(also_exclude={'activities', 'leads', 'custom_fields'}))
         super().test_first_sync_bookmark()
 
     def test_second_sync_bookmark(self):
-        # base iterates self.streams_to_test(), not self.test_streams, so super() cannot be used here
-        for stream in self._streams(also_exclude={'activities', 'leads', 'custom_fields'}):
-            with self.subTest(stream=stream):
-                if self.expected_replication_methods.get(stream) != self.INCREMENTAL:
-                    continue
-                replication_key = next(iter(self.expected_replication_keys(stream)))
-                sync_2_records = [
-                    r['data'] for r in self.synced_records_2.get(stream, {}).get('messages', [])
-                    if r.get('action') == 'upsert']
-                if not sync_2_records:
-                    continue
-                max_value = max(self.parse_date(r[replication_key]) for r in sync_2_records)
-                self.assertEqual(max_value, self.parse_date(self.bookmark_values_2.get(stream)))
+        # base iterates self.streams_to_test(), not self.test_streams
+        self._patch_streams_to_test(self._streams(also_exclude={'activities', 'leads', 'custom_fields'}))
+        super().test_second_sync_bookmark()
 
     def test_sync_2_bookmark_greater_or_equal_to_sync_1(self):
-        BookmarkTest.test_streams = self._streams()
+        self._set_test_streams(self._streams())
         super().test_sync_2_bookmark_greater_or_equal_to_sync_1()
 
     def test_first_vs_second_records(self):
         # custom_fields falls back to the sync-1 bookmark in calculate_new_bookmarks
         # (insufficient record spread), so sync 2 fetches the same window — exclude it.
-        BookmarkTest.test_streams = self._streams(also_exclude={'custom_fields'})
+        self._set_test_streams(self._streams(also_exclude={'custom_fields'}))
         super().test_first_vs_second_records()
 
     def test_bookmark_format(self):
         # activities bookmark (date_created) may lack microseconds — excluded from format check
-        BookmarkTest.test_streams = self._streams(also_exclude={'activities'})
+        self._set_test_streams(self._streams(also_exclude={'activities'}))
         super().test_bookmark_format()
