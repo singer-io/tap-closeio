@@ -2,8 +2,8 @@
 
 ## 1.7.0
   * Updated `singer-python` version. [#43](https://github.com/singer-io/tap-closeio/pull/43)
-  * Fixed Integration tests. [#48](https://github.com/singer-io/tap-closeio/pull/48)
   * Updated schema for activities. [#51](https://github.com/singer-io/tap-closeio/pull/51)
+  * Fixed Integration tests. [#48](https://github.com/singer-io/tap-closeio/pull/48)
 
 ## 1.6.5
   * Bump dependency versions for twistlock compliance [#42](https://github.com/singer-io/tap-closeio/pull/42)
