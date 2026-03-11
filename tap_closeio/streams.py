@@ -36,7 +36,7 @@ FORMATTERS = {
     IDS.LEADS: format_leads,
 }
 
-SYNC_START = datetime.utcnow()
+SYNC_START = datetime.now(timezone.utc)
 
 def bookmark(tap_stream_id):
     return [tap_stream_id, BOOK_KEYS[tap_stream_id]]
@@ -88,13 +88,16 @@ def paginated_sync(tap_stream_id, ctx, request, start_date):
     offset = [tap_stream_id, "skip"]
     skip = ctx.get_offset(offset) or 0
     max_bookmark = start_date
+    start_dt = pendulum.parse(start_date)
     formatter = FORMATTERS.get(tap_stream_id, (lambda x: x))
     while True:
         try:
             for page in paginate(ctx.client, tap_stream_id, _request, skip=skip):
                 records = formatter(format_dts(tap_stream_id, ctx, page.records))
-                to_write = [rec for rec in records if rec[bookmark_key] >= start_date]
-                max_bookmark = new_max_bookmark(max_bookmark, records, bookmark_key)
+                to_write = [rec for rec in records
+                            if rec.get(bookmark_key)
+                            and pendulum.parse(rec[bookmark_key]) >= start_dt]
+                max_bookmark = new_max_bookmark(max_bookmark, to_write, bookmark_key)
                 write_records(tap_stream_id, to_write)
                 ctx.set_offset(offset, page.next_skip)
                 LOGGER.info("Current Bookmark and Offset: `{}`, `{}`".format(
@@ -187,6 +190,7 @@ def sync_activities(ctx):
     LOGGER.info("Using offset seconds {}".format(offset_secs))
     start_date -= timedelta(seconds=offset_secs)
 
+    overall_max_bookmark = start_date_str
     window_start_date = start_date._datetime
     now = SYNC_START.replace(tzinfo=timezone.utc)
     while window_start_date <= now:
@@ -202,6 +206,18 @@ def sync_activities(ctx):
         params = {"date_created__gt": formatted_start_date, "date_created__lt": formatted_end_date}
         request = create_request(IDS.ACTIVITIES, params=params)
         paginated_sync(IDS.ACTIVITIES, ctx, request, formatted_start_date)
+
+        # Only advance overall bookmark when actual records exist in this window;
+        # empty windows would regress it to window_start.
+        current_bookmark = ctx.get_bookmark(bookmark(IDS.ACTIVITIES))
+        if current_bookmark:
+            current_bm = pendulum.parse(current_bookmark)
+            window_start_bm = pendulum.parse(formatted_start_date)
+            overall_bm = pendulum.parse(overall_max_bookmark)
+            if current_bm > window_start_bm and current_bm > overall_bm:
+                overall_max_bookmark = current_bookmark
+            ctx.set_bookmark(bookmark(IDS.ACTIVITIES), overall_max_bookmark)
+            ctx.write_state()
 
         window_start_date = window_end_date
 

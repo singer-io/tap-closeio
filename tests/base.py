@@ -3,8 +3,9 @@ Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 
+import pytz
 from tap_tester.base_suite_tests.base_case import BaseCase
 
 
@@ -24,6 +25,39 @@ class CloseioBase(BaseCase):
     # set the default start date which can be overridden in the tests,
     # by setting the property or changing self.start_date in a test.
     start_date ='2025-01-01T00:00:00Z'
+
+    @staticmethod
+    def parse_date(date_value):
+        """
+        Override base parse_date to correctly handle UTC 'Z' suffix dates.
+
+        The base implementation calls ``astimezone(pytz.UTC)`` on naive
+        datetimes, which assumes the **local** timezone – incorrect for
+        dates that were originally expressed with the 'Z' (Zulu / UTC)
+        suffix.  We use ``replace(tzinfo=pytz.UTC)`` instead so that
+        17:20Z is interpreted as 17:20 UTC, not 17:20 <local TZ>.
+
+        Uses a deterministic list (not a set) for format iteration order.
+        """
+        date_formats = [
+            "%Y-%m-%dT%H:%M:%S.%fZ",
+            "%Y-%m-%dT%H:%M:%S.Z",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+            "%Y-%m-%d",
+            "%Y-%m-%dT%H:%M:%S%z",
+        ]
+        for date_format in date_formats:
+            try:
+                date_stripped = datetime.strptime(date_value, date_format)
+                if date_stripped.tzinfo is None:
+                    date_stripped = date_stripped.replace(tzinfo=pytz.UTC)
+                return date_stripped
+            except ValueError:
+                pass
+
+        raise NotImplementedError(
+            f"Tests do not account for dates of this format: {date_value}"
+        )
 
     @staticmethod
     def tap_name():
@@ -58,7 +92,8 @@ class CloseioBase(BaseCase):
             BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
             BaseCase.REPLICATION_KEYS: {"date_updated"},
             BaseCase.RESPECTS_START_DATE: True,
-            BaseCase.API_LIMIT: 100
+            BaseCase.API_LIMIT: 100,
+            BaseCase.LOOK_BACK_WINDOW: timedelta(seconds=1),
         }
 
         return {
@@ -74,8 +109,14 @@ class CloseioBase(BaseCase):
             },
             'custom_fields': default_expectations,
             'event_log': default_expectations,
-            'leads': default_expectations,
-            'tasks': default_expectations,
+            'leads': {
+                **default_expectations,
+                BaseCase.LOOK_BACK_WINDOW: timedelta(seconds=15),
+            },
+            'tasks': {
+                **default_expectations,
+                BaseCase.LOOK_BACK_WINDOW: timedelta(seconds=15),
+            },
             'users': default_expectations
         }
 
@@ -85,6 +126,8 @@ class CloseioBase(BaseCase):
         automatic_fields = {
             'activities': {
                 '_type',
+                'agent_action_reason',
+                'agent_config_id',
                 # 'activity_at',
                 'attachments',
                 'bcc',
@@ -154,6 +197,7 @@ class CloseioBase(BaseCase):
                 'opportunity_value_period',
                 'organization_id',
                 'phone',
+                'pinned',
                 # 'recording_expires_at',
                 'recording_url',
                 'references',
@@ -420,13 +464,21 @@ class CloseioBase(BaseCase):
                 'user_note_date_updated',
                 'user_note_html',
                 'user_note_mentions',
-    'activity_at',
+                'activity_at',
+                'agent_config_id',
+                'pinned',
+                'agent_action_reason',
+                'playbook_id',
+                'playbook_reason',
             },
             "tasks": {
                 'priority',
                 'resolution',
                 'deduplication_key',
                 'is_primary_lead_notification',
+                'sequence_subscription_id',
+                'agent_config_id',
+                'sequence_id',
             },
         }
         missing_fields = {
