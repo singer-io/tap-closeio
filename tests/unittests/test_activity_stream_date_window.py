@@ -14,7 +14,7 @@ class TestActivityStreamDateWindow(unittest.TestCase):
         # now date
         now_date = datetime.now()
         config = {
-            "start_date": (now_date - timedelta(days=40)).strftime("%Y-%m-%d/"), # set date 40 days later than now
+            "start_date": (now_date - timedelta(days=40)).strftime("%Y-%m-%d"), # set date 40 days later than now
             "api_key": "test_API_key"
         }
         state = {}

@@ -11,8 +11,8 @@ setup(name='tap-closeio',
     py_modules=['tap_closeio'],
     install_requires=[
         'singer-python==5.17.0',
-        'pendulum==1.2.0',
-        'requests==2.32.4',
+        'pendulum==3.2.0',
+        'requests==2.32.5',
     ],
     extras_require={
         "test": [

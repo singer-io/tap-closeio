@@ -51,7 +51,7 @@ def new_max_bookmark(max_bookmark, records, key):
             max_bookmark = potential_bookmark
         elif potential_bookmark > now:
             LOGGER.info(f"Got future-dated bookmark value `{potential_bookmark}`; not updating state.")
-    return str(max_bookmark)
+    return max_bookmark.isoformat()
 
 
 def format_dts(tap_stream_id, ctx, records):
@@ -191,7 +191,7 @@ def sync_activities(ctx):
     start_date -= timedelta(seconds=offset_secs)
 
     overall_max_bookmark = start_date_str
-    window_start_date = start_date._datetime
+    window_start_date = start_date
     now = SYNC_START.replace(tzinfo=timezone.utc)
     while window_start_date <= now:
         window_end_date = window_start_date + timedelta(days=date_window)
