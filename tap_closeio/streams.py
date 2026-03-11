@@ -198,8 +198,8 @@ def sync_activities(ctx):
 
 
         # 'date_created__gt' and  'date_created__lt' has precision to the second
-        formatted_start_date = window_start_date.strftime("%Y-%m-%dT%H:%M:%S")
-        formatted_end_date = window_end_date.strftime("%Y-%m-%dT%H:%M:%S")
+        formatted_start_date = window_start_date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        formatted_end_date = window_end_date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
         LOGGER.info("Syncing data for date window: {}, {}".format(formatted_start_date, formatted_end_date))
 
