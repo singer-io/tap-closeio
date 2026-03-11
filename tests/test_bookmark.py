@@ -3,15 +3,7 @@ from tap_tester.base_suite_tests.bookmark_test import BookmarkTest
 
 
 # Streams excluded from all bookmark tests (no data, not bookmarked, or unreliable bookmark)
-_ALWAYS_EXCLUDE = {'event_log', 'users', 'tasks'}
-
-# Per-test additional exclusions and reasons:
-#   activities    - bookmark is set to the date-window boundary, not max(date_created)
-#   leads         - API filters at minute precision; bookmark != max(date_updated) of written records
-#   custom_fields - paginated_sync tracks max_bookmark over all fetched records (incl. unwritten);
-#                   bookmark can exceed max(date_updated) of written records
-#   tasks         - paginated_sync tracks max_bookmark over all fetched records (incl. unwritten);
-#                   bookmark can exceed max(date_updated) of written records — excluded from all tests
+_ALWAYS_EXCLUDE = {'users'}
 
 
 class CloseioBookmarkTest(BookmarkTest, CloseioBase):
@@ -23,6 +15,8 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
             'custom_fields': {'date_updated': '2025-01-01T00:00:00+00:00'},
             'leads': {'date_updated': '2025-01-01T00:00:00+00:00'},
             'activities': {'date_created': '2025-01-01T00:00:00+00:00'},
+            'tasks': {'date_updated': '2025-01-01T00:00:00+00:00'},
+            'event_log': {'date_updated': '2025-01-01T00:00:00+00:00'},
         }}
 
     @staticmethod
@@ -96,12 +90,15 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
         self.addCleanup(setattr, self, 'streams_to_test', original)
 
     def test_first_sync_bookmark(self):
-        self._set_test_streams(self._streams(also_exclude={'activities', 'leads', 'custom_fields'}))
+        # event_log excluded: sync_event_log caps bookmark to 5 min before sync start
+        # (Close.io recommendation) so bookmark != max(record.date_updated)
+        self._set_test_streams(self._streams(also_exclude={'activities', 'leads', 'custom_fields', 'event_log'}))
         super().test_first_sync_bookmark()
 
     def test_second_sync_bookmark(self):
         # base iterates self.streams_to_test(), not self.test_streams
-        self._patch_streams_to_test(self._streams(also_exclude={'activities', 'leads', 'custom_fields'}))
+        # event_log excluded: bookmark capped to 5 min before sync start (Close.io docs)
+        self._patch_streams_to_test(self._streams(also_exclude={'activities', 'leads', 'custom_fields', 'event_log'}))
         super().test_second_sync_bookmark()
 
     def test_sync_2_bookmark_greater_or_equal_to_sync_1(self):
@@ -111,7 +108,9 @@ class CloseioBookmarkTest(BookmarkTest, CloseioBase):
     def test_first_vs_second_records(self):
         # custom_fields falls back to the sync-1 bookmark in calculate_new_bookmarks
         # (insufficient record spread), so sync 2 fetches the same window — exclude it.
-        self._set_test_streams(self._streams(also_exclude={'custom_fields'}))
+        # tasks API endpoint has no server-side date filtering (/task/ returns all
+        # tasks regardless of bookmark), so both syncs return the same record set.
+        self._set_test_streams(self._streams(also_exclude={'custom_fields', 'tasks'}))
         super().test_first_vs_second_records()
 
     def test_bookmark_format(self):
