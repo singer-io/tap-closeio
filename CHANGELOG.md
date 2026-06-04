@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.6.6
+  * Bump requests to 2.33.0 for security updates [#48](https://github.com/singer-io/tap-closeio/pull/48)
+
+
 ## 1.6.5
   * Bump dependency versions for twistlock compliance [#42](https://github.com/singer-io/tap-closeio/pull/42)
 

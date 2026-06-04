@@ -192,7 +192,6 @@ def sync_activities(ctx):
     while window_start_date <= now:
         window_end_date = window_start_date + timedelta(days=date_window)
 
-
         # 'date_created__gt' and  'date_created__lt' has precision to the second
         formatted_start_date = window_start_date.strftime("%Y-%m-%dT%H:%M:%S")
         formatted_end_date = window_end_date.strftime("%Y-%m-%dT%H:%M:%S")
