@@ -331,6 +331,8 @@ class CloseioBase(BaseCase):
             },
             "activities": {
                 'actual_duration',
+                'agent_action_reason',
+                'agent_config_id',
                 'ai_draft',
                 'attached_call_ids',
                 'attendees',
@@ -397,7 +399,10 @@ class CloseioBase(BaseCase):
                 'outcome_id',
                 'outcome_reason',
                 'parent_meeting_id',
+                'pinned',
                 'pinned_at',
+                'playbook_id',
+                'playbook_reason',
                 'provider_calendar_event_id',
                 'provider_calendar_ids',
                 'provider_calendar_type',
@@ -423,10 +428,13 @@ class CloseioBase(BaseCase):
     'activity_at',
             },
             "tasks": {
+                'agent_config_id',
                 'priority',
                 'resolution',
                 'deduplication_key',
                 'is_primary_lead_notification',
+                'sequence_id',
+                'sequence_subscription_id',
             },
         }
         missing_fields = {
