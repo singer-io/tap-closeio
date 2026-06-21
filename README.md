@@ -45,16 +45,31 @@ This tap:
 4. Run the tap in discovery mode
 
     ```bash
-    tap-closeio --config config.json --discover
+    tap-closeio --config config.json --discover > catalog.json
     ```
 
    See the Singer docs on discovery mode
    [here](https://github.com/singer-io/getting-started/blob/master/BEST_PRACTICES.md#discover-mode-and-connection-checks).
 
-5. Run the tap in sync mode
+5.  In the generated `catalog.json` file, select the streams to sync.
+
+    Each stream in the `catalog.json` file has a `schema` entry. To select a stream to sync, add **"selected": true** to that stream's `schema` entry. For example, to sync the survey_details stream:
+
+    ```
+    "tap_stream_id": "activity",
+        "schema": {
+            "selected": true,
+            "properties": {
+                ...
+            }
+        }
+    ...
+    ```
+
+6. Run the tap in sync mode
 
     ```bash
-    tap-closeio --config config.json --properties catalog.json
+    tap-closeio --config config.json --catalog catalog.json
     ```
 
 ## Event Logs
